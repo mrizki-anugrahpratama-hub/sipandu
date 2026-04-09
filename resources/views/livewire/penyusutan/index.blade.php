@@ -1,5 +1,5 @@
 {{-- Menggunakan class utama dashboard-container --}}
-<div class="dashboard-container dashboard-scope" style="min-height: 100vh; background: var(--bg-page, #151c28);">
+<div class="dashboard-container dashboard-scope">
 
     {{-- 1. HEADER HALAMAN --}}
     <x-slot name="header">
