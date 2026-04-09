@@ -12,6 +12,51 @@
     {{-- 2. CSS KHUSUS (MENGIMPOR GAYA DASBOR) --}}
     @push('styles')
     <style>
+        /* Badge Statistik di dalam kartu */
+        .option-stats {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Indikator "Ready to Process" */
+        .ready-badge {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            background: var(--red-text);
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+        .theme-blue .ready-badge {
+            background: var(--blue-text);
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+        }
+
         /* 🎨 VARIBEL KHUSUS UNTUK KOMPONEN INI (Menggunakan warna dari dasbor) */
         .dashboard-scope {
             /* Fallback untuk light mode jika diperlukan */
@@ -194,9 +239,12 @@
         </div>
 
         <div class="penyusutan-options">
-            
-            {{-- OPSI 1: ARSIP MUSNAH (TEMA MERAH) --}}
+    
+            {{-- OPSI 1: ARSIP MUSNAH --}}
             <a href="{{ route('penyusutan.musnah.index') }}" class="option-card theme-red animated-card" style="animation-delay: 0.1s;" wire:navigate>
+                @if($pendingMusnah > 0)
+                    <div class="ready-badge">{{ $pendingMusnah }} Siap Musnah</div>
+                @endif
                 <div class="option-icon">
                     <i class="bi bi-trash3"></i>
                 </div>
@@ -206,14 +254,29 @@
                     <p class="option-desc">
                         Kelola arsip yang masa retensinya telah habis. Lihat daftar, lakukan pemusnahan, dan cetak berita acara.
                     </p>
+                    
+                    {{-- INDIKATOR JUMLAH --}}
+                    <div class="option-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ number_format($totalMusnah) }}</span>
+                            <span class="stat-label">Total Arsip</span>
+                        </div>
+                        <div class="stat-item" style="border-left: 1px solid var(--border-color); padding-left: 10px;">
+                            <span class="stat-value" style="color: var(--red-text);">{{ number_format($pendingMusnah) }}</span>
+                            <span class="stat-label">Belum Musnah</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="option-arrow">
                     <i class="bi bi-arrow-right"></i>
                 </div>
             </a>
             
-            {{-- OPSI 2: ARSIP PERMANEN (TEMA BIRU) --}}
+            {{-- OPSI 2: ARSIP PERMANEN --}}
             <a href="{{ route('penyusutan.permanen.index') }}" class="option-card theme-blue animated-card" style="animation-delay: 0.2s;" wire:navigate>
+                @if($pendingPermanen > 0)
+                    <div class="ready-badge">{{ $pendingPermanen }} Siap Verifikasi</div>
+                @endif
                 <div class="option-icon">
                     <i class="bi bi-archive"></i>
                 </div>
@@ -223,12 +286,24 @@
                     <p class="option-desc">
                         Kelola arsip bernilai guna berkelanjutan. Arsip ini akan disimpan selamanya sebagai aset memori institusi.
                     </p>
+        
+                    {{-- INDIKATOR JUMLAH --}}
+                    <div class="option-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">{{ number_format($totalPermanen) }}</span>
+                            <span class="stat-label">Total Arsip</span>
+                        </div>
+                        <div class="stat-item" style="border-left: 1px solid var(--border-color); padding-left: 10px;">
+                            <span class="stat-value" style="color: var(--blue-text);">{{ number_format($pendingPermanen) }}</span>
+                            <span class="stat-label">Siap Permanen</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="option-arrow">
                     <i class="bi bi-arrow-right"></i>
                 </div>
             </a>
-
+        
         </div>
     </div>
 </div>
