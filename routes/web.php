@@ -100,6 +100,12 @@ Route::get('/dashboard', function () {
 // GROUP DASHBOARD (Role Protected)
 // =========================================================================
 Route::middleware(['auth'])->group(function () {
+
+    // notifikasi
+    Route::get('/notifications/mark-all-read', function () {
+        Auth::user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('notifications.markAllRead');
     
     // --- Super Admin ---
     Route::middleware(['role:super_admin'])->group(function () {

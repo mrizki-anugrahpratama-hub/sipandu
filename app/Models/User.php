@@ -21,7 +21,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        
+        'role',           // Tambahkan ini
+        'bidang_id',      // Tambahkan ini
+        'sub_bidang_id',  // Tambahkan ini
     ];
 
     /**
@@ -54,6 +56,12 @@ class User extends Authenticatable
     public function subBidang()
     {
         return $this->belongsTo(SubBidang::class);
+    }
+
+    // Helper untuk mengecek apakah user memiliki akses level manajemen
+    public function hasFullAccess()
+    {
+        return in_array($this->role, ['super_admin', 'sekretariat']);
     }
 
 }

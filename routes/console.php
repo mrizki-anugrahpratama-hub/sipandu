@@ -9,5 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
-Schedule::command('arsip:auto-move-expired')->dailyAt('00:00');
-Schedule::command('arsip:transition-to-appraisal')->dailyAt('00:00');
+Schedule::command('arsip:auto-move-expired')->dailyAt('10:45');
+Schedule::command('arsip:transition-to-appraisal')->dailyAt('10:45');

@@ -25,7 +25,7 @@
             <h1>Daftar Berkas Aktif</h1>
             <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangFinal }}</a>
             <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Berkas Aktif</span>
+            <span class="breadcrumb-item active">Arsip Aktif</span>
         </div>
     </x-slot>
 
@@ -567,7 +567,7 @@
             </div>
             
             <a href="{{ route('arsip.aktif.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Tambah Arsip Baru
+                <i class="bi bi-plus-circle"></i> Tambah Arsip
             </a>
         </div>
 

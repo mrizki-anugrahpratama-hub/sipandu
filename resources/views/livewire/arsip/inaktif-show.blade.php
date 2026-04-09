@@ -1,53 +1,41 @@
 <div>
     {{-- 1. HEADER --}}
-    {{-- 1. HEADER --}}
     <x-slot name="header">
         @php
-        // 1. Pastikan variabel arsip tersedia
         $arsip = $arsip ?? $arsipInaktif ?? null;
-
-        // 2. Cek Status Arsip
         $isPermanen = ($arsip && $arsip->status_akhir == 'Permanen');
         $isMusnah = ($arsip && $arsip->status_akhir == 'Musnah');
 
-        // 3. Logika Breadcrumb
-        if ($isPermanen) {
-        // --- KONDISI 1: ARSIP PERMANEN ---
-        // Path: Penyusutan > Arsip Permanen > Detail
-        $labelLevel1 = 'Penyusutan';
-        $urlLevel1 = route('penyusutan.index');
+        // LOGIKA PERBAIKAN: Cek asal akses terlebih dahulu
+        $from = $from ?? request()->query('from');
 
-        $labelLevel2 = 'Arsip Permanen';
-        $urlLevel2 = url('/penyusutan/permanen');
-
-        } elseif ($isMusnah) {
-        // --- KONDISI 2: ARSIP MUSNAH ---
-        // Path: Penyusutan > Arsip Musnah > Detail
-        $labelLevel1 = 'Penyusutan';
-        $urlLevel1 = route('penyusutan.index');
-
-        $labelLevel2 = 'Arsip Musnah';
-        $urlLevel2 = url('/penyusutan/musnah'); // atau route('penyusutan.musnah')
-
+        if ($from === 'inaktif') {
+            // Jalur: Nama Bidang > Arsip Inaktif > Detail
+            $labelLevel1 = $namaBidangYangDibuka ?? 'Dashboard';
+            $slugRaw = $slugBidangYangDibuka ?? 'dashboard';
+            $slugBidangSafe = str_replace('_', '-', $slugRaw);
+            $urlLevel1 = route('dashboard.' . $slugBidangSafe);
+        
+            $labelLevel2 = 'Arsip Inaktif';
+            $urlLevel2 = route('arsip.inaktif.index');
+        } 
+        elseif ($isPermanen) {
+            $labelLevel1 = 'Penyusutan';
+            $urlLevel1 = route('penyusutan.index');
+            $labelLevel2 = 'Arsip Permanen';
+            $urlLevel2 = url('/penyusutan/permanen');
+        } 
+        elseif ($isMusnah) {
+            $labelLevel1 = 'Penyusutan';
+            $urlLevel1 = route('penyusutan.index');
+            $labelLevel2 = 'Arsip Musnah';
+            $urlLevel2 = url('/penyusutan/musnah');
         } else {
-        // --- KONDISI 3: DEFAULT / ARSIP INAKTIF (YANG ANDA MINTA) ---
-        // Path: Nama Bidang > Arsip Inaktif > Detail
-
-        // A. Tentukan Label Level 1 (Nama Bidang)
-        // Jika variabel $namaBidangYangDibuka tidak ada, fallback ke 'Dashboard'
-        $labelLevel1 = $namaBidangYangDibuka ?? 'Dashboard';
-
-        // B. Tentukan URL Level 1 (Link ke Dashboard Bidang)
-        // Pastikan slug aman (ubah underscore jadi dash)
-        $slugRaw = $slugBidangYangDibuka ?? 'dashboard';
-        $slugBidangSafe = str_replace('_', '-', $slugRaw);
-
-        // Mengarahkan ke route dashboard bidang (misal: dashboard.bidang-umum)
-        $urlLevel1 = route('dashboard.' . $slugBidangSafe);
-
-        // C. Tentukan Level 2 (Arsip Inaktif)
-        $labelLevel2 = 'Arsip Inaktif';
-        $urlLevel2 = route('arsip.inaktif.index');
+            // Default Fallback
+            $labelLevel1 = $namaBidangYangDibuka ?? 'Dashboard';
+            $urlLevel1 = '#';
+            $labelLevel2 = 'Arsip Inaktif';
+            $urlLevel2 = route('arsip.inaktif.index');
         }
         @endphp
 

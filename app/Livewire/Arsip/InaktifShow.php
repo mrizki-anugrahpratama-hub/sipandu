@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 // use Livewire\Attributes\Layout; // [PERUBAHAN 1] Baris ini tidak dipakai lagi
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
 
 // [PERUBAHAN 1] Hapus atau komentari atribut Layout di sini
 // #[Layout('layouts.app')] 
@@ -33,12 +34,17 @@ class InaktifShow extends Component
     public $confirmingFileDeletion = false;
     public $deletingFileId = null;
 
+    #[Url] // [TAMBAHKAN INI] agar context ?from=inaktif tetap ada di URL
+
+    public $from;
     /**
      * Mount component, load data arsip berdasarkan ID.
      */
     public function mount($id)
     {
         $this->arsipId = $id;
+
+        $this->from = $this->from ?? request()->query('from');
         
         try {
             // 1. Ambil Arsip berdasarkan ID dan eager load relasi files
@@ -146,7 +152,8 @@ class InaktifShow extends Component
         ->layout('layouts.app', [
             'title' => 'Detail Arsip',
             // [PENTING] Kita kirim variabel $arsip ke Layout agar Sidebar bisa membacanya
-            'arsip' => $this->arsip 
+            'arsip' => $this->arsip,
+            'from' => $this->from // Kirim juga parameter 'from' agar bisa digunakan di Layout
         ]);
     }
 }

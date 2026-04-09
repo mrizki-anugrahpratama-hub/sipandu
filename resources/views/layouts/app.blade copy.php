@@ -44,35 +44,6 @@
             --transition-duration: 0.35s;
         }
 
-        /* Toast Styles */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .toast-item {
-            background: var(--bg-white);
-            border-left: 4px solid var(--primary-blue);
-            box-shadow: var(--shadow-lift);
-            border-radius: var(--radius-md);
-            padding: 16px;
-            width: 320px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
         body.dark-mode {
             --bg-main: #111827;
             --bg-sidebar: #1f2937;
@@ -318,8 +289,9 @@
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease-in-out;
-            margin: 4px 0 4px 16px;
+            margin: 4px 0 4px 24px; /* Geser agar sejajar dengan garis ikon */
             padding-left: 0;
+            border-left: 1px solid var(--border-color); /* Garis bantu vertikal */
         }
 
         .submenu.open {
@@ -327,17 +299,18 @@
         }
 
         .submenu a {
-            padding-left: 30px;
-            font-size: 0.95rem;
+            padding-left: 16px; /* Jarak teks dari garis vertikal */
+            font-size: 0.9rem;
             padding-top: 8px;
             padding-bottom: 8px;
             color: var(--text-secondary);
+            border-radius: 0 8px 8px 0; /* Radius hanya di sisi kanan */
         }
 
         .submenu a.active {
-            font-weight: 500;
-            color: var(--text-primary);
-            background-color: var(--bg-active);
+            font-weight: 600;
+            color: var(--primary-blue);
+            background-color: var(--bg-active-light);
         }
 
         .submenu a.active i {
@@ -376,55 +349,15 @@
 
         /* ⭐️ AKHIR KODE UNTUK MENAMPILKAN HEADER NAVIGASI ⭐️ */
 
-        /* app.blade.php (Bagian Style) */
-        .nav-link-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 14px; /* Gunakan padding samping saja */
-            border-radius: var(--radius-md);
-            transition: all 0.2s var(--transition-timing);
-        }
-
-        /* [PERBAIKAN] Menambahkan efek hover agar sama dengan menu lain */
-        .nav-link-wrapper:hover {
-            background-color: var(--bg-active);
-        }
-
-        .nav-link-wrapper:hover a, 
-        .nav-link-wrapper:hover .submenu-toggle {
-            color: var(--text-primary);
-        }
-
-        .nav-link-wrapper a {
-            flex-grow: 1;
-            padding: 10px 0 !important; /* Padding vertikal disamakan dengan sidebar-nav a */
-            background: transparent !important;
-            display: flex;
-            align-items: center;
-        }
-
-        .nav-link-wrapper.active {
-            background-color: var(--bg-active);
-        }
-
-        .submenu-toggle {
-            cursor: pointer;
-            padding: 10px; /* Memperluas area klik pada panah */
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            transition: transform 0.3s;
-            margin-right: -10px; /* Menetralkan padding agar mepet ke kanan */
-        }
 
         .main-content {
             flex: 1;
             height: 100%;
             overflow-y: auto;
-            padding: 32px 40px;
+            padding: 8px 40px 32px 40px;
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 14px;
             position: relative;
             z-index: 1;
         }
@@ -432,13 +365,14 @@
         .content-header {
             display: flex;
             justify-content: flex-start;
-            align-items: center;
+            align-items: center !important;
             gap: 16px;
-            padding: 16px 0;
+            padding: 10px 0 20px 0 !important; /* Memberi ruang lebih di bawah garis */
             background-color: transparent;
             border-bottom: 1px solid var(--border-color);
             transition: border-color 0.3s;
-            margin-bottom: 16px;
+            margin-bottom: 12px; /* Jarak ke konten dashboard di bawahnya */
+            min-height: auto; /* Biarkan konten yang menentukan tinggi */
         }
 
         .sidebar-toggle-btn {
@@ -1064,18 +998,82 @@
             transform: translateX(-10px);
         }
 
+        /* --- FORCE CENTER SIDEBAR ICON --- */
         body.sidebar-collapsed .sidebar-nav a {
-            justify-content: center;
+            justify-content: center !important; /* Paksa ke tengah */
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        
+        body.sidebar-collapsed .sidebar-nav a i:first-child {
+            margin-right: 0 !important; /* Buang margin ikon utama */
+            font-size: 1.3rem; /* Sedikit perbesar agar proporsional di box */
+        }
+        
+        /* Hilangkan paksa span dan panah submenu agar tidak mengganggu centering */
+        body.sidebar-collapsed .sidebar-nav a span, 
+        body.sidebar-collapsed .submenu-toggle {
+            display: none !important;
+        }
+        
+        /* Rapikan padding sidebar-left saat collapse agar tidak jomplang */
+        body.sidebar-collapsed .sidebar-left {
+            padding: 20px 10px !important; /* Kecilkan padding samping */
+        }
+
+
+
+        /* --- FIX TOTAL IKON LOGO (PERISAI) --- */
+        body.sidebar-collapsed .sidebar-logo {
+            justify-content: center !important; /* Paksa konten logo ke tengah */
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+        }
+
+        body.sidebar-collapsed .sidebar-logo .logo-icon {
+            margin-right: 0 !important; /* Buang sisa margin kanan */
+        }
+
+        /* --- FIX TOTAL HEADER BAR (NAIK KE ATAS) --- */
+        .main-content {
+            padding-top: 5px !important; /* Tarik konten utama ke atas layar */
+        }
+
+        .content-header {
+            min-height: 0 !important; /* BUANG PAKSAAN 85px yang bikin turun */
+            padding-top: 10px !important; /* Tipiskan jarak atas */
+            padding-bottom: 10px !important; /* Tipiskan jarak bawah */
+            margin-bottom: 5px !important;
+            align-items: center !important;
+        }
+
+        /* Pastikan judul "Dashboard" tidak punya margin atas tambahan */
+        .welcome-title-group h1 {
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1 !important;
+        }
+
+
+        
+        
+        body.sidebar-collapsed .sidebar-nav a {
+            justify-content: center !important;
             padding-top: 12px;
             padding-bottom: 12px;
-            padding-left: 0;
-            padding-right: 0;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
             align-items: center;
             height: auto;
+            width: 100%;
         }
 
         body.sidebar-collapsed .sidebar-nav a i {
             margin-right: 0 !important;
+            margin-left: 0 !important;
+            display: block;
+            width: auto;
         }
 
         body.sidebar-collapsed .sidebar-nav a span {
@@ -1117,104 +1115,6 @@
             overflow: hidden;
         }
 
-        /* Pagination */
-        /* 1. Container Utama */
-        nav[role="navigation"] {
-            margin-top: 2rem;
-            padding: 1rem 0;
-        }
-
-        /* 2. Style Dasar Tombol (Angka & Panah) */
-        nav[role="navigation"] .relative.inline-flex.items-center {
-            border-radius: 4px !important; /* Membuat bentuk kotak rapi */
-            min-width: 40px;               /* Lebar minimal agar seragam */
-            height: 40px;                  /* Tinggi seragam */
-            justify-content: center;       /* Teks di tengah */
-            margin: 0 3px;                 /* Jarak antar kotak */
-            border: 1px solid #d1d5db !important; /* Warna border konsisten */
-            background-color: var(--bg-white);
-            color: var(--text-secondary);
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        /* 3. Efek Hover (Saat Mouse Diatas Tombol) */
-        nav[role="navigation"] a.relative.inline-flex.items-center:hover {
-            background-color: var(--bg-active) !important;
-            border-color: var(--primary-blue) !important;
-            color: var(--primary-blue) !important;
-            z-index: 10;
-        }
-
-        /* 4. Tombol Aktif (Halaman yang sedang dibuka) */
-        nav[role="navigation"] .z-10.bg-indigo-600, 
-        nav[role="navigation"] .z-10.bg-blue-600,
-        nav[role="navigation"] span.relative.inline-flex.items-center.bg-blue-50 {
-            background-color: var(--primary-blue) !important; /* Gunakan warna primer app */
-            color: white !important;
-            border-color: var(--primary-blue) !important;
-        }
-
-        /* 5. Merapikan Teks Informasi (Showing 1 to 10...) */
-        nav[role="navigation"] .hidden.sm\:flex-1 {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 1rem;
-        }
-
-        /* 6. Memastikan Dropdown/Shadow Tailwind tidak mengganggu */
-        nav[role="navigation"] .shadow-sm {
-            box-shadow: none !important;
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
-
-        /* --- SEMBUNYIKAN TEKS "SHOWING X TO Y..." --- */
-
-        /* Menghilangkan div pertama (teks info) pada pagination desktop */
-        /* nav[role="navigation"] .hidden.sm\:flex-1 > div:first-child { */
-            /* display: none !important; */
-        /* } */
-        /*  */
-        /* Memastikan kotak nomor tetap berada di tengah setelah teks dihapus */
-        /* nav[role="navigation"] .hidden.sm\:flex-1 { */
-            /* justify-content: center !important; */
-        /* } */
-        /*  */
-        /* Untuk versi mobile: Menghilangkan teks info jika ada */
-        /* nav[role="navigation"] .flex.items-center.justify-between.flex-1.sm\:hidden p { */
-            /* display: none !important; */
-        /* } */
-
-       /* =============================================================
-            PEMBERSIHAN TOTAL TEKS DI BAWAH TABEL (PAGINATION)
-           ============================================================= */
-            
-        /* 1. Hilangkan paragraf teks "Showing..." atau "Menampilkan..."
-        nav[role="navigation"] p {
-            display: none !important;
-        }
-        
-        /* 2. Hilangkan container pembungkus teks (div kiri) */
-        /* nav[role="navigation"] .hidden.sm\:flex-1 > div:first-child {
-            display: none !important;
-        } */
-        
-        /* 3. Paksa kotak angka pagination agar pindah ke TENAH (Center) */
-        /* nav[role="navigation"] .hidden.sm\:flex-1 {
-            justify-content: center !important;
-            display: flex !important;
-            width: 100% !important;
-        } */
-        
-        /* 4. Untuk tampilan Mobile, sembunyikan teks yang tersisa */
-        /* nav[role="navigation"] .flex.items-center.justify-between.flex-1.sm\:hidden p {
-            display: none !important;
-        } */ */
-
         @media (max-width: 992px) {
             .main-content-grid {
                 grid-template-columns: 1fr;
@@ -1225,7 +1125,11 @@
             }
 
             .welcome-title-group h1 {
-                font-size: 1.25rem;
+                font-size: 1.6rem; /* Sedikit diperbesar agar lebih tegas */
+                font-weight: 700;
+                color: var(--text-primary);
+                margin: 0;
+                letter-spacing: -0.5px;
             }
 
             .content-header {
@@ -1617,17 +1521,12 @@
 
             <nav class="sidebar-nav">
                 @php
-                $userRole = Auth::user()->role;
-                // 1. Tangkap context 'from' dari request URL atau variabel yang dikirim Livewire
-                $origin = request('from') ?? ($from ?? null);
-
                 // [UPDATE] Cek apakah arsip berstatus 'Permanen' ATAU 'Musnah'
                 // Variabel $arsip didapat dari View (Detail Arsip)
-                // $isArsipPenyusutan = (isset($arsip) && in_array($arsip->status_akhir, ['Permanen', 'Musnah']));
-                $isArsipPenyusutan = (isset($arsip) && in_array($arsip->status_akhir, ['Permanen', 'Musnah']) && $origin !== 'inaktif');
+                $isArsipPenyusutan = (isset($arsip) && in_array($arsip->status_akhir, ['Permanen', 'Musnah']));
 
                 // Prioritaskan request('filterBidang') agar Sidebar langsung berubah sesuai URL
-                $activeBidang = request('filterBidang') ?? (isset($arsip) ? $arsip->bidang : (Session::get('current_bidang') ?? Auth::user()->role));
+                $activeBidang = request('filterBidang') ?? Session::get('current_bidang') ?? Auth::user()->role;
 
                 // Helper Variables
                 $isLogActive = request()->is('*log-aktivitas*');
@@ -1635,7 +1534,7 @@
                 // [UPDATE] Logic Arsip Aktif:
                 // Hanya bernilai TRUE jika route-nya 'arsip.*' DAN BUKAN bagian dari penyusutan (Musnah/Permanen).
                 // Ini mencegah menu Bidang (Pemerintahan dll) menyala saat buka arsip Musnah/Permanen.
-                $isArsipSpecificActive = request()->routeIs('arsip.*');
+                $isArsipSpecificActive = request()->routeIs('arsip.*') && !$isArsipPenyusutan;
 
                 // Daftar Dashboard selain home
                 $bidangRoutes = [
@@ -1665,93 +1564,57 @@
                 {{-- MENU HOME --}}
                 <ul>
                     <li>
-                        <a href="{{ route($dashboardRouteName) }}" class="{{ request()->routeIs($dashboardRouteName) ? 'active' : '' }}" wire:navigate>
-                        {{-- <a href="{{ route($dashboardRouteName) }}" class="{{ $isHomeActive ? 'active' : '' }}" wire:navigate> --}}
-                            <i class="bi bi-house"></i> <span>Beranda</span>
+                        <a href="{{ route($dashboardRouteName) }}" class="{{ $isHomeActive ? 'active' : '' }}" wire:navigate>
+                            <i class="bi bi-house"></i> <span>Home</span>
                         </a>
                     </li>
                 </ul>
 
-                {{-- AREA ARSIP (Tampil untuk semua role kecuali Super Admin yang fokus ke Manajemen Bidang) --}}
-                {{-- @if($userRole !== 'super_admin')
-                <h6 class="nav-heading">ARSIP</h6> --}}
-                {{-- <ul> --}}
-                    {{-- <li><a href="{{ route('arsip.aktif.index') }}" class="{{ request()->routeIs('arsip.aktif.*') ? 'active' : '' }}" wire:navigate><i class="bi bi-file-earmark-check"></i> <span>Arsip Aktif</span></a></li> --}}
-                    {{-- <li><a href="{{ route('arsip.inaktif.index') }}" class="{{ request()->routeIs('arsip.inaktif.*') ? 'active' : '' }}" wire:navigate><i class="bi bi-file-earmark-zip"></i> <span>Arsip Inaktif</span></a></li> --}}
-                    {{-- <li><a href="{{ route('arsip.vital.index') }}" class="{{ request()->routeIs('arsip.vital.*') ? 'active' : '' }}" wire:navigate><i class="bi bi-file-earmark-lock"></i> <span>Arsip Vital</span></a></li> --}}
-                {{-- </ul> --}}
-                {{-- @endif --}}
+                {{-- HEADER ARSIP --}}
+                <h6 class="nav-heading">ARSIP</h6>
 
                 {{-- LOGIKA UTAMA SIDEBAR --}}
                 @if(Auth::user()->role === 'super_admin' || Auth::user()->role === 'sekretariat')
-                <h6 class="nav-heading">ARSIP</h6>
                 <ul>
                     {{-- 🟢 KONDISI 1: SUPER ADMIN (TAMPIL DROPDOWN) 🟢 --}}
                     @if(Auth::user()->role === 'super_admin')
                     <li class="has-submenu">
                         @php
                         $sekretariatGroup = ['umum_kepegawaian', 'keuangan', 'penyusunan_program', 'sekretariat'];
-                        $isSekretariatActive = in_array($activeBidang, $sekretariatGroup);
 
-                        // // Induk aktif
-                        // $isSekretariatActive = (
-                        // (request()->routeIs('dashboard.umum-kepegawaian') || request()->routeIs('dashboard.keuangan') || request()->routeIs('dashboard.penyusunan-program')) ||
-                        // (($isArsipSpecificActive || $isLogActive) && in_array($activeBidang, $sekretariatGroup))
-                        // );
+                        // Induk aktif
+                        $isSekretariatActive = (
+                        (request()->routeIs('dashboard.umum-kepegawaian') || request()->routeIs('dashboard.keuangan') || request()->routeIs('dashboard.penyusunan-program')) ||
+                        (($isArsipSpecificActive || $isLogActive) && in_array($activeBidang, $sekretariatGroup))
+                        );
 
                         // Anak aktif
-                        // $isUmumLinkActive = (request()->routeIs('dashboard.umum-kepegawaian') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'umum_kepegawaian'));
-                        // $isKeuanganLinkActive = (request()->routeIs('dashboard.keuangan') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'keuangan'));
-                        // $isProgramLinkActive = (request()->routeIs('dashboard.penyusunan-program') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'penyusunan_program'));
+                        $isUmumLinkActive = (request()->routeIs('dashboard.umum-kepegawaian') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'umum_kepegawaian'));
+                        $isKeuanganLinkActive = (request()->routeIs('dashboard.keuangan') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'keuangan'));
+                        $isProgramLinkActive = (request()->routeIs('dashboard.penyusunan-program') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'penyusunan_program'));
                         @endphp
 
-                        {{-- FLEX CONTAINER: Menjaga panah tetap di samping teks --}}
-                        <div class="nav-link-wrapper {{ $isSekretariatActive ? 'active' : '' }}">
-                            <a href="{{ route('dashboard.sekretariat') }}" wire:navigate>
-                                <i class="bi bi-building"></i> <span>Sekretariat</span>
-                            </a>
-                            <i class="bi {{ $isSekretariatActive ? 'bi-chevron-up' : 'bi-chevron-down' }} submenu-toggle"></i>
-                        </div>
+                        <a href="#" class="{{ $isSekretariatActive ? 'active' : '' }}">
+                            <i class="bi bi-building"></i>
+                            <span>Sekretariat</span>
+                            <i class="bi bi-chevron-down submenu-toggle"></i>
+                        </a>
 
                         <ul class="submenu {{ $isSekretariatActive ? 'open' : '' }}">
-                            <li><a href="{{ route('dashboard.umum-kepegawaian') }}" class="{{ $activeBidang === 'umum_kepegawaian' ? 'active' : '' }}" wire:navigate>Sub. Umum & Kepeg.</a></li>
-                            <li><a href="{{ route('dashboard.keuangan') }}" class="{{ $activeBidang === 'keuangan' ? 'active' : '' }}" wire:navigate>Sub. Keuangan</a></li>
-                            <li><a href="{{ route('dashboard.penyusunan-program') }}" class="{{ $activeBidang === 'penyusunan_program' ? 'active' : '' }}" wire:navigate>Sub. Program</a></li>
-                        </ul>
-
-                        {{-- <div class="d-flex align-items-center">
-                            <a href="{{ route('dashboard.sekretariat') }}" class="{{ $isSekretariatActive ? 'active' : '' }}" style="flex-grow: 1;">
-                                <i class="bi bi-building"></i> <span>Sekretariat</span>
-                            </a>
-                            <i class="bi bi-chevron-down submenu-toggle" style="cursor:pointer; padding: 10px;"></i>
-                        </div> --}}
-
-                        {{-- <ul class="submenu {{ $isSekretariatActive ? 'open' : '' }}">
                             <li><a href="{{ route('dashboard.umum-kepegawaian') }}" class="{{ $isUmumLinkActive ? 'active' : '' }}" wire:navigate>Sub. Umum & Kepeg.</a></li>
                             <li><a href="{{ route('dashboard.keuangan') }}" class="{{ $isKeuanganLinkActive ? 'active' : '' }}" wire:navigate>Sub. Keuangan</a></li>
                             <li><a href="{{ route('dashboard.penyusunan-program') }}" class="{{ $isProgramLinkActive ? 'active' : '' }}" wire:navigate>Sub. Program</a></li>
-                        </ul> --}}
+                        </ul>
                     </li>
 
                     {{-- 🟢 KONDISI 2: AKUN SEKRETARIAT (TAMPIL FLAT) 🟢 --}}
                     @elseif(Auth::user()->role === 'sekretariat')
-                    {{-- <ul>
-                        <li><a href="{{ route('arsip.aktif.index') }}" class="{{ request()->routeIs('arsip.aktif.*') ? 'active' : '' }}" wire:navigate><i class="bi bi-file-earmark-check"></i> <span>Arsip Aktif</span></a></li>
-                        <li><a href="{{ route('arsip.inaktif.index') }}" class="{{ request()->routeIs('arsip.inaktif.*') ? 'active' : '' }}" wire:navigate><i class="bi bi-file-earmark-zip"></i> <span>Arsip Inaktif</span></a></li>
-                        <li><a href="{{ route('arsip.vital.index') }}" class="{{ request()->routeIs('arsip.vital.*') ? 'active' : '' }}" wire:navigate><i class="bi bi-file-earmark-lock"></i> <span>Arsip Vital</span></a></li>
-                    </ul> --}}
                     @php
-                    $isSekretariatActive = request()->routeIs('dashboard.sekretariat') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'sekretariat');
                     $isUmumActive = request()->routeIs('dashboard.umum-kepegawaian') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'umum_kepegawaian');
                     $isKeuanganActive = request()->routeIs('dashboard.keuangan') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'keuangan');
                     $isProgramActive = request()->routeIs('dashboard.penyusunan-program') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'penyusunan_program');
                     @endphp
 
-                    <li>
-                        <a href="{{ route('dashboard.sekretariat') }}" class="{{ $isSekretariatActive ? 'active' : '' }}" wire:navigate>
-                            <i class="bi bi-book"></i> <span>Sekretariat</span>
-                        </a>
-                    </li>
                     <li>
                         <a href="{{ route('dashboard.umum-kepegawaian') }}" class="{{ $isUmumActive ? 'active' : '' }}" wire:navigate>
                             <i class="bi bi-people"></i> <span>Sub. Umum & Kepeg.</span>
@@ -1799,7 +1662,7 @@
                 </ul>
 
                 {{-- 🟢 KONDISI 3: ROLE LAINNYA (Dashboard Unit Kerja) 🟢 --}}
-                @elseif(in_array(Auth::user()->role, ['sekretariat', 'umum_kepegawaian', 'keuangan', 'penyusunan_program', 'pemerintahan', 'pembangunan_ekonomi', 'kemasyarakatan', 'sarana_prasarana']))
+                @elseif(in_array(Auth::user()->role, ['umum_kepegawaian', 'keuangan', 'penyusunan_program', 'pemerintahan', 'pembangunan_ekonomi', 'kemasyarakatan', 'sarana_prasarana']))
                 <ul>
                     <li><a href="{{ route('arsip.aktif.index') }}" class="{{ request()->routeIs('arsip.aktif.*') ? 'active' : '' }}" wire:navigate><i class="bi bi-file-earmark-check"></i> <span>Arsip Aktif</span></a></li>
                     <li><a href="{{ route('arsip.inaktif.index') }}" class="{{ request()->routeIs('arsip.inaktif.*') ? 'active' : '' }}" wire:navigate><i class="bi bi-file-earmark-zip"></i> <span>Arsip Inaktif</span></a></li>
@@ -1855,35 +1718,48 @@
                         @hasSection('breadcrumbs')
                         @yield('breadcrumbs')
                         @else
-                        <span class="breadcrumb-item active">Selamat datang di dashboard Anda</span>
+                        <span class="breadcrumb-item active">Selamat datang di dashboard SIPANDU</span>
                         @endif
                     </div>
                     @endif
                 </nav>
 
                 <div class="header-right">
-                    @livewire('layouts.notification-bell')
+                    <div class="notification-btn-container">
+                        <button class="notification-btn" id="notificationToggle">
+                            <i class="bi bi-bell"></i>
+                            @if(isset($unreadNotifications) && $unreadNotifications > 0)
+                            <span class="notification-badge"></span>
+                            @endif
+                        </button>
 
-                    {{-- Container untuk Toast --}}
-                    <div class="toast-container" x-data="{ 
-                        toasts: [],
-                        addToast(e) {
-                            const id = Date.now();
-                            this.toasts.push({ id, title: e.detail[0].title, message: e.detail[0].message });
-                            setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id) }, 6000);
-                        }
-                    }" @notification-received.window="addToast($event)">
-                        <template x-for="toast in toasts" :key="toast.id">
-                            <div class="toast-box">
-                                <i class="bi bi-info-circle-fill" style="color: var(--primary-blue); font-size: 1.5rem;"></i>
-                                <div>
-                                    <strong x-text="toast.title" style="display: block; font-size: 0.9rem;"></strong>
-                                    <span x-text="toast.message" style="font-size: 0.8rem; color: var(--text-secondary);"></span>
-                                </div>
+                        <div class="notification-dropdown" id="notificationDropdown">
+                            <div class="notification-header">
+                                <strong>Notifikasi</strong>
+                                <a href="#" class="see-all-link">Tandai terbaca</a>
                             </div>
-                        </template>
+                            <ul class="notification-list">
+                                @if(isset($notifications) && count($notifications) > 0)
+                                @foreach($notifications as $notif)
+                                <li>
+                                    <a href="#" class="notification-item">
+                                        <div class="icon-box" style="background-color: {{ $notif['color'] }}; color: {{ $notif['icon_color'] }};"><i class="bi bi-{{ $notif['icon'] }}"></i></div>
+                                        <div class="text-content">
+                                            <strong>{{ $notif['title'] }}</strong>
+                                            <span>{{ $notif['description'] }}</span>
+                                        </div>
+                                    </a>
+                                </li>
+                                @endforeach
+                                @else
+                                <li style="padding: 20px; text-align: center; color: var(--text-muted);">
+                                    Tidak ada notifikasi baru
+                                </li>
+                                @endif
+                            </ul>
+                        </div>
                     </div>
-                    
+
                     <div class="profile-menu-container">
                         <button class="login-btn" id="profileToggle">
                             <i class="bi bi-person"></i>
@@ -1932,70 +1808,42 @@
             });
 
 
-            /// app.blade.php (Bagian Script)
+            // // Ini memastikan semua skrip Anda di-inisialisasi ulang setiap kali pindah halaman
             document.addEventListener("livewire:navigated", function() {
-                function closeAllSubmenus(except = null) {
-                    document.querySelectorAll(".submenu.open").forEach(function(sub) {
-                        // HANYA tutup jika submenu tersebut bukan yang sedang kita interaksi
-                        if (sub !== except) {
-                            sub.classList.remove("open");
-                            let toggleIcon = sub.previousElementSibling.querySelector(".submenu-toggle");
-                            if (toggleIcon) {
-                                toggleIcon.classList.replace("bi-chevron-up", "bi-chevron-down");
+                function closeAllSubmenus(exceptThisOne = null) {
+                    document.querySelectorAll(".submenu.open").forEach(function(submenu) {
+                        if (submenu !== exceptThisOne) {
+                            submenu.classList.remove("open");
+                            let icon = submenu.previousElementSibling.querySelector(".submenu-toggle");
+                            if (icon) {
+                                icon.classList.remove("bi-chevron-up");
+                                icon.classList.add("bi-chevron-down");
                             }
                         }
                     });
                 }
-            
-                document.querySelectorAll(".submenu-toggle").forEach(function(toggle) {
-                    toggle.addEventListener("click", function(e) {
+
+                document.querySelectorAll(".has-submenu > a").forEach(function(link) {
+                    link.addEventListener("click", function(e) {
                         e.preventDefault();
-                        e.stopPropagation(); // Mencegah klik tembus ke parent atau link
-                    
-                        let parentLi = this.closest(".has-submenu");
-                        let submenu = parentLi.querySelector(".submenu");
-                    
-                        if (submenu) {
-                            // 1. Simpan status sebelum di-tweak
-                            const isCurrentlyOpen = submenu.classList.contains("open");
-                            
-                            // 2. Tutup submenu LAIN (kecuali yang ini)
-                            closeAllSubmenus(submenu);
-                            
-                            // 3. Toggle status milik sendiri (Jika open jadi close, dst)
-                            submenu.classList.toggle("open");
-                        
-                            // 4. Sinkronisasi arah panah berdasarkan status SEKARANG
+                        if (document.body.classList.contains("sidebar-collapsed")) return;
+
+                        let currentSubmenu = this.nextElementSibling;
+                        closeAllSubmenus(currentSubmenu);
+                        const submenu = this.nextElementSibling;
+                        submenu.classList.toggle("open");
+                        const icon = this.querySelector(".submenu-toggle");
+                        if (icon) {
                             if (submenu.classList.contains("open")) {
-                                this.classList.replace("bi-chevron-down", "bi-chevron-up");
+                                icon.classList.remove("bi-chevron-down");
+                                icon.classList.add("bi-chevron-up");
                             } else {
-                                this.classList.replace("bi-chevron-up", "bi-chevron-down");
+                                icon.classList.remove("bi-chevron-up");
+                                icon.classList.add("bi-chevron-down");
                             }
                         }
                     });
                 });
-            
-                // document.querySelectorAll(".has-submenu > a").forEach(function(link) {
-                //     link.addEventListener("click", function(e) {
-                //         e.preventDefault();
-                //         if (document.body.classList.contains("sidebar-collapsed")) return;
-
-                //         let currentSubmenu = this.nextElementSibling;
-                //         closeAllSubmenus(currentSubmenu);
-                //         const submenu = this.nextElementSibling;
-                //         submenu.classList.toggle("open");
-                //         const icon = this.querySelector(".submenu-toggle");
-                //         if (icon) {
-                //             if (submenu.classList.contains("open")) {
-                //                 icon.classList.remove("bi-chevron-down");
-                //                 icon.classList.add("bi-chevron-up");
-                //             } else {
-                //                 icon.classList.remove("bi-chevron-up");
-                //                 icon.classList.add("bi-chevron-down");
-                //             }
-                //         }
-                //     });
-                // });
 
                 const sidebarToggle = document.getElementById("sidebarToggle");
                 const sidebarOverlay = document.getElementById("sidebarOverlay");

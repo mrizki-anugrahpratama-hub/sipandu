@@ -113,7 +113,7 @@ class VitalIndex extends Component
         
         $query = ArsipVital::query()->with('user');
 
-        if ($user->role === 'super_admin') {
+        if ($user->role === 'super_admin' || $user->role === 'sekretariat') {
             if ($currentBidang) {
                 $query->where('bidang', $currentBidang);
             }

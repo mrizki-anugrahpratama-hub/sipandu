@@ -240,7 +240,7 @@
                 </table>
             </div>
             <div class="pagination-container">
-                <span class="pagination-info">Menampilkan {{ $aktivitas->firstItem() ?? 0 }}-{{ $aktivitas->lastItem() ?? 0 }} dari {{ $aktivitas->total() }} aktivitas</span>
+                {{-- <span class="pagination-info">Menampilkan {{ $aktivitas->firstItem() ?? 0 }}-{{ $aktivitas->lastItem() ?? 0 }} dari {{ $aktivitas->total() }} aktivitas</span> --}}
                 <div class="pagination-buttons">{{ $aktivitas->links() }}</div>
             </div>
         </section>
