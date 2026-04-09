@@ -157,7 +157,7 @@ class AktifIndex extends Component
         $user = Auth::user();
         
         // Gunakan $this->filterBidang yang sudah disinkronkan dari URL/Session di mount()
-        if ($user->role === 'super_admin') {
+        if ($user->role === 'super_admin' || $user->role === 'sekretariat') {
             if ($this->filterBidang) {
                 $query->where('bidang', $this->filterBidang);
             }

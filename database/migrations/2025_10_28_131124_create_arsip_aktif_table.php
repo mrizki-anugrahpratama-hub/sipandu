@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('kode_klasifikasi', 100);
             $table->string('nomor_berkas');
-            $table->string('uraian');
+            $table->text('uraian');
             $table->string('index')->nullable();
             $table->string('kurun_waktu', 50);
             $table->integer('jumlah');

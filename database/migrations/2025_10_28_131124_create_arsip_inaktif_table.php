@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('nomor_box')->nullable()->comment('Diisi setelah arsip dipindahkan');
             $table->string('kode_klasifikasi');
             $table->string('nomor_berkas');
-            $table->string('uraian');
+            $table->text('uraian');
             $table->string('index')->nullable();
             $table->string('kurun_waktu');
             $table->integer('jumlah'); 

@@ -16,6 +16,7 @@ class Sekretariat extends Component
 {
     // Daftar Sub-Bagian di bawah naungan Sekretariat
     protected $lingkupSekretariat = [
+        'sekretariat',
         'umum_kepegawaian', 
         'keuangan', 
         'penyusunan_program'
@@ -35,6 +36,7 @@ class Sekretariat extends Component
         $arsipAktifCount = ArsipAktif::whereIn('bidang', $this->lingkupSekretariat)->count();
         $arsipInaktifCount = ArsipInaktif::whereIn('bidang', $this->lingkupSekretariat)->where('status_pengolahan', 'inaktif')->count();
         $arsipVitalCount = ArsipVital::whereIn('bidang', $this->lingkupSekretariat)->count();
+        // $recycleBinCount = RecycleBin::whereIn('data_arsip->bidang', $this->lingkupSekretariat)->count();
         
         $totalArsip = $arsipAktifCount + $arsipInaktifCount + $arsipVitalCount;
 
@@ -50,17 +52,24 @@ class Sekretariat extends Component
         // 5. Notifikasi (Opsional/Kosongkan dulu)
         $notifications = []; 
 
+        $pageTitle = 'Sekretariat';
+        if (Auth::user() && Auth::user()->role !== 'super_admin') {
+            $pageTitle = 'Selamat datang, Admin Sekretariat';
+        };
+
         return view('livewire.dashboard.sekretariat', [
             'totalArsip' => $totalArsip,
             'arsipAktifCount' => $arsipAktifCount,
             'arsipInaktifCount' => $arsipInaktifCount,
             'arsipVitalCount' => $arsipVitalCount,
+            // 'recycleBinCount' => $recycleBinCount,
             'chartData' => $chartData,
             'recentArsip' => $recentArsip,
             'activityLogs' => $activityLogs,
             'notifications' => $notifications,
             'unreadNotifications' => 0
-        ]);
+        ])
+        ->title($pageTitle);
     }
 
     private function getRecentArchives()

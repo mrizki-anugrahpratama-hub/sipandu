@@ -151,7 +151,7 @@ class InaktifIndex extends Component
                              ->where('status_pengolahan', 'inaktif');
 
         // --- Filter Bidang (Menggunakan $this->filterBidang dari URL/Mount) ---
-        if ($user->role === 'super_admin') {
+        if ($user->role === 'super_admin' || $user->role === 'sekretariat') {
             if ($this->filterBidang) {
                 $query->where('bidang', $this->filterBidang);
             }

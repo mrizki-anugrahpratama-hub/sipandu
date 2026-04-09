@@ -423,8 +423,7 @@
             <div class="search-bar-table">
                 <i class="bi bi-search"></i>
                 <input wire:model.live.debounce.300ms="search" type="text" 
-                        placeholder="Cari kode, nomor, uraian, kurun waktu, atau index..." 
-                        autocomplete="off">
+                        placeholder="Cari kode, nomor, uraian, kurun waktu, atau index..." autocomplete="off">
             </div>
             <a href="{{ route('arsip.inaktif.create') }}" class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Tambah Arsip
@@ -548,7 +547,9 @@
                         @forelse ($arsipInaktif as $index => $arsip)
                             <tr class="clickable-row {{ collect($selectedArsip)->contains($arsip->id) ? 'row-selected' : '' }}"
                                 wire:key="row-{{ $arsip->id }}"
-                                onclick="window.location.href = @js(route('arsip.inaktif.show', $arsip->id));">
+                                {{-- onclick="window.location.href = @js(route('arsip.inaktif.show', $arsip->id));"> --}}
+                                onclick="window.location.href = @js(route('arsip.inaktif.show', ['id' => $arsip->id, 'from' => 'inaktif']));">
+                                {{-- @click="window.location.href = '{{ route('arsip.inaktif.show', ['id' => $arsip->id, 'from' => 'inaktif']) }}'"> --}}
 
                                 <td class="text-center" style="vertical-align: middle;" onclick="event.stopPropagation();">
                                     <input type="checkbox" wire:model.live="selectedArsip" value="{{ $arsip->id }}" onclick="event.stopPropagation();">
@@ -580,16 +581,23 @@
                                 <td class="text-center" onclick="event.stopPropagation();">
                                     @php
                                         $fileCount = $arsip->files_count ?? 0;
-                                        // Tentukan URL tujuan: Storage langsung jika 1 file, atau halaman manage jika > 1 atau 0.
-                                        $singleFilePath = ($fileCount == 1 && $arsip->files->isNotEmpty()) 
-                                            // [PERBAIKAN] Gunakan path_file, BUKAN path
-                                            ? asset('storage/' . $arsip->files->first()->path_file) 
-                                            : route('arsip.inaktif.files.manage', $arsip->id);
+                                        // // Tentukan URL tujuan: Storage langsung jika 1 file, atau halaman manage jika > 1 atau 0.
+                                        // $singleFilePath = ($fileCount == 1 && $arsip->files->isNotEmpty()) 
+                                        //     // [PERBAIKAN] Gunakan path_file, BUKAN path
+                                        //     ? asset('storage/' . $arsip->files->first()->path_file) 
+                                        //     : route('arsip.inaktif.files.manage', $arsip->id);
+                                        $manageFilesUrl = route('arsip.inaktif.files.manage', ['id' => $arsip->id, 'from' => 'inaktif']);
                                     @endphp
-                                    <a href="{{ $singleFilePath }}" 
+                                    {{-- <a href="{{ $singleFilePath }}" 
                                        class="file-icon" 
                                        title="{{ $fileCount == 1 ? 'Lihat File Langsung' : 'Kelola File' }}"
                                        target="{{ $fileCount == 1 ? '_blank' : '_self' }}">
+                                        <i class="bi bi-file-earmark-arrow-up"></i>
+                                        @if ($fileCount > 0)
+                                            <span style="font-size: 0.8rem; font-weight: 600;"> ({{ $fileCount }})</span>
+                                        @endif
+                                    </a> --}}
+                                    <a href="{{ ($fileCount == 1) ? asset('storage/' . $arsip->files->first()->path_file) : $manageFilesUrl }}">
                                         <i class="bi bi-file-earmark-arrow-up"></i>
                                         @if ($fileCount > 0)
                                             <span style="font-size: 0.8rem; font-weight: 600;"> ({{ $fileCount }})</span>
