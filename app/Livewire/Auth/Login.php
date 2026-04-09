@@ -33,6 +33,9 @@ class Login extends Component
             return redirect()->route('dashboard.' . str_replace('_', '-', $role));
         }
 
+        $this->reset('password');
+        $this->reset('email');
+
         $this->addError('email', 'Email atau password salah.');
     }
 
