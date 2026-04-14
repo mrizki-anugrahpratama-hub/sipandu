@@ -1819,6 +1819,12 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{{ route('manajemen.akun.index') }}" class="menu-item {{ request()->routeIs('manajemen.akun.*') ? 'active' : '' }}">
+                            <i class="bi bi-person-gear"></i>
+                            <span>Manajemen Akun</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="{{ route('recycle-bin.index') }}" class="{{ request()->routeIs('recycle-bin.*') ? 'active' : '' }}" wire:navigate>
                             <i class="bi bi-trash"></i> <span>Recycle Bin</span>
                         </a>

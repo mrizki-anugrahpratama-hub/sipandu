@@ -40,7 +40,7 @@
                 x-transition:enter-start="opacity-0 translate-y-4"
                 x-transition:enter-end="opacity-100 translate-y-0"
                 class="text-2xl md:text-5xl font-extrabold text-white tracking-tight uppercase leading-tight">
-                Selamat Datang di <br class="hidden md:block"> <span class="text-blue-400">Portal SIPANDU</span>
+                Selamat Datang di <br> <span class="text-blue-400">Portal SIPANDU</span>
             </h1>
             <p x-show="startAnim"
                x-transition:enter="transition ease-out duration-1000 delay-700"

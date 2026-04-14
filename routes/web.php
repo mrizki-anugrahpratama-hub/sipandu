@@ -21,6 +21,7 @@ use App\Livewire\Dashboard\PenyusunanProgram;
 // Manajemen & Log
 use App\Livewire\RecycleBin\Index as RecycleBinIndex;
 use App\Livewire\Log\AktivitasIndex;
+use App\Livewire\Management\UserIndex;
 
 // Penyusutan
 use App\Livewire\Penyusutan\Index as PenyusutanIndex;
@@ -116,6 +117,9 @@ Route::middleware(['auth'])->group(function () {
         // Jika Anda belum punya komponen 'Sistem', saya arahkan sementara ke SuperAdmin.
         // Ganti 'SuperAdmin::class' dengan komponen yang benar jika sudah dibuat.
         Route::get('/dashboard/sistem', SuperAdmin::class)->name('dashboard.sistem');
+
+        // Manajemen Akun
+        Route::get('/manajemen/akun', UserIndex::class)->name('manajemen.akun.index');
     });
 
     // --- Sekretariat ---
