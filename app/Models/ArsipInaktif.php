@@ -9,10 +9,12 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\User; 
 use App\Models\FileArsip; // [UBAH DISINI]: Gunakan FileArsip, bukan File
+use App\Traits\LogsActivity;
 
 class ArsipInaktif extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     protected $table = 'arsip_inaktif';
 

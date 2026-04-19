@@ -12,6 +12,7 @@ use Livewire\Attributes\Url;
 use App\Models\ArsipAktif;
 use App\Models\ArsipInaktif;
 use App\Models\ArsipVital;
+use App\Models\AktivitasSistem;
 use App\Models\User;
 
 #[Layout('layouts.app')]
@@ -27,6 +28,9 @@ class AktivitasIndex extends Component
 
     #[Url]
     public $filterBidang = '';
+
+    #[Url]
+    public $filterAksi = '';
 
     public $tanggal_mulai = '';
     public $tanggal_selesai = '';
@@ -219,20 +223,33 @@ class AktivitasIndex extends Component
 
     public function render()
     {
-        $query = $this->buildAktivitasQuery();
-        $aktivitas = $query->paginate(15);
+        $query = AktivitasSistem::with('user')->latest();
 
-        $userIds = $aktivitas->pluck('user_id')->unique()->filter();
-        $users = User::whereIn('id', $userIds)->get()->keyBy('id');
+        // [TAMBAHKAN INI] Logika filter berdasarkan aksi (Tambah, Ubah, Hapus)
+        if ($this->filterAksi) {
+            $query->where('aksi', $this->filterAksi);
+        }
 
-        $aktivitas->getCollection()->transform(function ($item) use ($users) {
-            $item->user = $users->get($item->user_id);
-            // $item->route_name tidak lagi diperlukan
-            return $item;
-        });
+        // Filter Pencarian
+        if ($this->search) {
+            $query->where('deskripsi', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('user', fn($q) => $q->where('name', 'like', '%' . $this->search . '%'));
+        }
+
+        // Filter Bidang (RBAC)
+        if (Auth::user()->role !== 'super_admin' && Auth::user()->role !== 'sekretariat') {
+            $query->where('bidang', Auth::user()->role);
+        } elseif (!empty($this->filterBidang)) {
+            $query->where('bidang', $this->filterBidang);
+        }
+
+        // Filter Jenis Arsip (Modul)
+        if ($this->filterJenis) {
+            $query->where('modul', 'like', '%' . $this->filterJenis . '%');
+        }
 
         return view('livewire.log.aktivitas-index', [
-            'aktivitas' => $aktivitas,
-        ]);
+            'aktivitas' => $query->paginate(15)
+        ])->title('Log Aktivitas Sistem');
     }
 }

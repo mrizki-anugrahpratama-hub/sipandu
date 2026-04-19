@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\LogsActivity;
 
 class ArsipVital extends Model
 {
     use HasFactory;
+    use LogsActivity;
 
     // Pastikan nama tabel sesuai dengan Migration (arsip_vitals jamak)
     protected $table = 'arsip_vitals';

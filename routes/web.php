@@ -120,6 +120,9 @@ Route::middleware(['auth'])->group(function () {
 
         // Manajemen Akun
         Route::get('/manajemen/akun', UserIndex::class)->name('manajemen.akun.index');
+
+        // Log Aktivitas
+        Route::get('/log-aktivitas', AktivitasIndex::class)->name('log.aktivitas');
     });
 
     // --- Sekretariat ---
@@ -201,9 +204,6 @@ Route::middleware(['auth'])->group(function () {
 
     // Recycle Bin
     Route::get('/recycle-bin', RecycleBinIndex::class)->name('recycle-bin.index');
-
-    // Log Aktivitas
-    Route::get('/log-aktivitas', AktivitasIndex::class)->name('log.aktivitas');
 });
 
 // =========================================================================
