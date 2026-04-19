@@ -53,6 +53,17 @@
             z-index: 9999 !important; /* Pastikan kalender selalu di atas */
         }
 
+        /* BADGE */
+        /* .badge-tambah { background: #dcfce7; color: #166534; border: 1px solid #166534; }
+        .badge-ubah { background: #fef9c3; color: #854d0e; border: 1px solid #854d0e; }
+        .badge-hapus { background: #fee2e2; color: #991b1b; border: 1px solid #991b1b; }
+        .aksi-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; } */
+
+        .badge-tambah { background-color: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid #22c55e; }
+        .badge-ubah { background-color: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid #eab308; }
+        .badge-hapus { background-color: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }
+        .aksi-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+
         /* DARK MODE FIXES */
         body.dark-mode .flatpickr-calendar { background: #1f2937 !important; border: 1px solid #374151 !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5) !important; }
         body.dark-mode .flatpickr-months .flatpickr-month { background: #1f2937 !important; color: #f3f4f6 !important; fill: #f3f4f6 !important; }
@@ -204,9 +215,10 @@
                         <tr>
                             <th class="text-center" style="width: 50px;">No</th>
                             <th>Uraian</th>
+                            <th class="text-center">Aksi</th>
                             <th class="text-center">Jenis Arsip</th>
                             <th class="text-center">Unit Pengolah</th>
-                            <th class="text-center">Diunggah Oleh</th>
+                            {{-- <th class="text-center">Dilakukan Oleh</th> --}}
                             <th class="text-center">Waktu Upload</th>
                         </tr>
                     </thead>
@@ -217,24 +229,70 @@
                         @endphp
                         @forelse ($aktivitas as $index => $item)
                             @php $itemDate = $item->created_at->format('Y-m-d'); @endphp
+
+                            {{-- Header Grup Tanggal --}}
                             @if ($currentDate != $itemDate)
-                                <tr class="date-header-row"><td colspan="{{ $columnCount }}"><i class="bi bi-calendar-week"></i> {{ $item->created_at->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</td></tr>
+                                <tr class="date-header-row">
+                                    <td colspan="6" style="background: var(--bg-active); font-weight: 700;">
+                                        <i class="bi bi-calendar3"></i> {{ $item->created_at->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
+                                    </td>
+                                </tr>
                                 @php $currentDate = $itemDate; @endphp
                             @endif
-                            <tr wire:key="log-{{ $item->jenis_arsip_label }}-{{ $item->id }}">
+                            
+                            <tr wire:key="log-{{ $item->id }}">
+                                {{-- 1. No --}}
                                 <td class="text-center">{{ $aktivitas->firstItem() + $index }}</td>
-                                {{-- PERBAIKAN: Teks Uraian menjadi biasa (tidak bold) --}}
-                                <td class="text-wrap">{{ $item->nama_tampilan }}</td>
-                                <td class="text-center">
-                                    @php $type = $item->jenis_arsip_label; $badgeClass = ($type == 'Aktif' ? 'badge-active' : ($type == 'Inaktif' ? 'badge-inactive' : 'badge-vital')); @endphp
-                                    <span class="arsip-type-badge {{ $badgeClass }}">{{ $type }}</span>
+                            
+                                {{-- 2. Deskripsi (Berisi Uraian Arsip) --}}
+                                <td class="text-wrap" style="color: var(--text-primary);">
+                                    {{ $item->deskripsi }}
                                 </td>
-                                <td class="text-center">{{ \Illuminate\Support\Str::title(str_replace('_', ' ', $item->bidang)) }}</td>
-                                <td class="text-center">{{ $item->user->name ?? 'N/A' }}</td>
-                                <td class="text-center" style="font-family: monospace; color: var(--text-secondary);">{{ $item->created_at->format('H:i') }}</td>
+                            
+                                {{-- 3. Badge Aksi --}}
+                                <td class="text-center">
+                                    @php 
+                                        $badgeClass = match($item->aksi) {
+                                            'Tambah' => 'badge-tambah',
+                                            'Ubah'   => 'badge-ubah',
+                                            'Hapus'  => 'badge-hapus',
+                                            default  => ''
+                                        };
+                                    @endphp
+                                    <span class="aksi-badge {{ $badgeClass }}">{{ strtoupper($item->aksi) }}</span>
+                                </td>
+                            
+                                {{-- 4. Modul --}}
+                                <td class="text-center">
+                                    <span class="arsip-type-badge" style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; color: #3b82f6;">
+                                        {{ $item->modul }}
+                                    </span>
+                                </td>
+                            
+                                {{-- 5. Pelaku --}}
+                                <td class="text-center">
+                                    <strong>{{ $item->user->name ?? 'N/A' }}</strong>
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary);">
+                                        {{ \Illuminate\Support\Str::title(str_replace('_', ' ', $item->bidang)) }}
+                                    </div>
+                                </td>
+                            
+                                {{-- 6. Waktu Upload (Format Tanggal/Waktu Tumpuk) --}}
+                                <td class="text-center" style="font-family: monospace; white-space: nowrap;">
+                                    <div style="font-weight: 700; color: var(--text-primary);">
+                                        {{ $item->created_at->format('d/m/Y') }}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                        {{ $item->created_at->format('H:i') }} WIB
+                                    </div>
+                                </td>
                             </tr>
                         @empty
-                            <tr><td colspan="{{ $columnCount }}"><div class="empty-data-state"><i class="bi bi-inbox" style="font-size: 3rem; display: block; margin-bottom: 10px;"></i>Data tidak ditemukan</div></td></tr>
+                            <tr>
+                                <td colspan="6" class="text-center" style="padding: 3rem; color: var(--text-sub);">
+                                    Data aktivitas tidak ditemukan.
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
