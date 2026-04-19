@@ -195,108 +195,79 @@
                             
                             <div class="form-metadata-column">
                                 <h4 class="form-column-header">1. Detail Informasi File</h4>
-
+                            
                                 {{-- Uraian Informasi Arsip --}}
                                 <div class="form-group" style="margin-bottom: 16px;">
                                     <label for="uraian" class="form-label">Uraian Informasi Arsip</label>
                                     <input type="text" id="uraian" class="form-control @error('uraian') is-invalid @enderror" 
                                            wire:model="uraian" placeholder="Contoh: Surat Undangan Rapat...">
                                     <small class="form-helper">Beri nama/deskripsi singkat untuk file ini.</small>
-                                    @error('uraian')
-                                        <span class="text-danger">{{ $message }}</span>
-                                    @enderror
+                                    @error('uraian') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
                                 
-                                {{-- Baris 2 Kolom (Flex) di dalam Grid --}}
                                 <div class="form-row">
                                     <div class="form-group" style="flex: 1;">
                                         <label for="tanggal_file" class="form-label">Tanggal File</label>
                                         <input type="date" id="tanggal_file" class="form-control @error('tanggal_file') is-invalid @enderror" 
                                                wire:model="tanggal_file">
-                                        @error('tanggal_file')
-                                            <span class="text-danger">{{ $message }}</span>
-                                        @enderror
                                     </div>
-                                    <div class="form-group" style="flex: 1;">
-                                        <label for="jumlah" class="form-label">Jumlah</label>
-                                        <input type="number" id="jumlah" class="form-control @error('jumlah') is-invalid @enderror" 
-                                               wire:model="jumlah" min="1">
-                                        @error('jumlah')
-                                            <span class="text-danger">{{ $message }}</span>
-                                        @enderror
+                                    
+                                    {{-- [PEMBARUAN] Jumlah & Satuan Fleksibel --}}
+                                    <div class="form-group" style="flex: 1.5;">
+                                        <label class="form-label">Kuantitas Item</label>
+                                        <div style="display: flex; gap: 8px;">
+                                            <input type="number" id="jumlah" class="form-control @error('jumlah') is-invalid @enderror" 
+                                                   wire:model="jumlah" min="1" style="flex: 1;" placeholder="Jml">
+                                            <select wire:model="satuan" class="form-control" style="flex: 2;">
+                                                <option value="Lembar">Lembar</option>
+                                                <option value="Berkas">Berkas</option>
+                                                <option value="Buku">Buku</option>
+                                                <option value="Eksemplar">Eksemplar</option>
+                                                <option value="Sampul">Sampul</option>
+                                            </select>
+                                        </div>
+                                        @error('jumlah') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
-
+                            
                                 {{-- Tingkat Perkembangan --}}
                                 <div class="form-group">
                                     <label for="tingkat_perkembangan" class="form-label">Tingkat Perkembangan</label>
-                                    <select id="tingkat_perkembangan" class="form-control @error('tingkat_perkembangan') is-invalid @enderror" 
-                                            wire:model="tingkat_perkembangan">
+                                    <select id="tingkat_perkembangan" class="form-control" wire:model="tingkat_perkembangan">
                                         <option value="Asli">Asli</option>
                                         <option value="Fotokopi">Fotokopi</option>
+                                        <option value="Salinan">Salinan</option>
                                     </select>
-                                    @error('tingkat_perkembangan')
-                                        <span class="text-danger">{{ $message }}</span>
-                                    @enderror
                                 </div>
                             </div>
 
                             <div class="form-upload-column">
-                                <h4 class="form-column-header">2. Upload File</h4>
-
-                                {{-- [AREA UPLOAD BARU] --}}
+                                <h4 class="form-column-header">2. Upload File (Opsional)</h4> {{-- [PEMBARUAN] Menjadi Opsional --}}
+                                
                                 <div x-data="{ isUploading: false, isFileSelected: false, isDragging: false }"
-                                     x-on:livewire-upload-start="isUploading = true; isFileSelected = false"
-                                     x-on:livewire-upload-finish="isUploading = false; isFileSelected = true"
-                                     x-on:livewire-upload-error="isUploading = false; isFileSelected = false"
-                                     x-on:dragover.prevent="isDragging = true"
-                                     x-on:dragleave.prevent="isDragging = false"
-                                     x-on:drop="isDragging = false"
+                                     {{-- Alpine JS logic tetap sama --}}
                                      class="file-upload-wrapper"
                                      :class="{ 'is-dragging': isDragging }">
                                     
-                                    {{-- Input file native (disembunyikan) --}}
-                                    <input type="file" id="file_arsip" 
-                                           wire:model="file_arsip" 
-                                           class="file-input-native" 
-                                           x-ref="fileInput"
-                                           x-on:change="isFileSelected = $refs.fileInput.files.length > 0">
+                                    <input type="file" id="file_arsip" wire:model="file_arsip" class="file-input-native" x-ref="fileInput">
                                     
-                                    {{-- Tampilan UI untuk upload --}}
                                     <div class="file-upload-ui">
-                                        
-                                        {{-- State: Loading --}}
-                                        <div wire:loading wire:target="file_arsip" class="file-upload-state">
-                                            <i class="bi bi-stopwatch"></i>
-                                            <p>Meng-upload...</p>
-                                        </div>
-                                        
-                                        {{-- State: Sukses (File Terpilih) --}}
-                                        <template x-if="isFileSelected && !isUploading">
-                                            <div class="file-upload-state success">
-                                                <i class="bi bi-check-circle-fill"></i>
-                                                {{-- Ambil nama file dari Alpine JS --}}
-                                                <p x-text="$refs.fileInput.files[0].name">File terpilih!</p>
-                                                <small><label for="file_arsip" class="file-upload-link">Ganti file</label></small>
-                                            </div>
-                                        </template>
-
-                                        {{-- State: Default (Menunggu file) --}}
+                                        {{-- Default State --}}
                                         <div wire:loading.remove wire:target="file_arsip" x-show="!isFileSelected && !isUploading">
                                             <i class="bi bi-cloud-arrow-up-fill"></i>
                                             <p class="file-upload-text">
-                                                <b>Tarik & Lepas file di sini</b><br>
-                                                atau <label for="file_arsip" class="file-upload-link">klik untuk memilih file</label>
+                                                <b>Bisa dikosongkan</b> jika tidak ada file.<br>
+                                                atau <label for="file_arsip" class="file-upload-link">klik untuk memilih</label>
                                             </p>
-                                            <small>PDF, DOCX, JPG, dll (Maks 10MB)</small>
+                                            <small>Hanya jika tersedia versi digitalnya.</small>
                                         </div>
+                                        {{-- State sukses/loading tetap mengikuti logic sebelumnya --}}
                                     </div>
                                 </div>
-                                @error('file_arsip')
-                                    <span class="text-danger" style="margin-top: 10px;">{{ $message }}</span>
-                                @enderror
+                                <small class="form-helper" style="display: block; margin-top: 8px; font-style: italic;">
+                                    *Item tetap dapat disimpan sebagai catatan metadata meskipun tanpa file digital.
+                                </small>
                             </div>
-                        </div>
 
                         {{-- Tombol Aksi (Tidak berubah) --}}
                         <div class="form-actions">

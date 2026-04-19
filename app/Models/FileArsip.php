@@ -27,6 +27,7 @@ class FileArsip extends Model
         'uraian',           // Uraian informasi
         'tanggal_file',     // Tanggal file/surat
         'jumlah',           // Jumlah fisik
+        'satuan',           // Satuan jumlah fisik (misal: Lembar, Eksemplar, dll)
         'klasifikasi_akses',// Klasifikasi dan akses arsip
         'status_keaslian',  // Asli/salinan
         
