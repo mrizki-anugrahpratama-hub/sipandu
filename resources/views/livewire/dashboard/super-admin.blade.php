@@ -230,6 +230,83 @@
 
     @endphp
 
+    {{-- Modal Video Tutorial SIPANDU --}}
+    <div x-data="{ 
+            showTutorial: false,
+            init() {
+                // Muncul setiap sesi baru (login atau buka tab baru)
+                if (!sessionStorage.getItem('sipandu_session_tutorial')) {
+                    setTimeout(() => { 
+                        this.showTutorial = true;
+                    }, 1000);
+                }
+            },
+            closeTutorial() {
+                this.showTutorial = false;
+                sessionStorage.setItem('sipandu_session_tutorial', 'true');
+            }
+        }" 
+        x-show="showTutorial" 
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 scale-100"
+        x-transition:leave-end="opacity-0 scale-95"
+        class="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+        style="display: none;"
+        @keydown.escape.window="closeTutorial()">
+
+        {{-- Konten Modal --}}
+        <div class="bg-white dark:bg-[#1f2937] rounded-[1rem] shadow-2xl max-w-3xl w-full overflow-hidden border border-gray-200 dark:border-gray-700"
+             @click.away="closeTutorial()">
+
+            {{-- 1. Header: Diberi padding yang lebih lega --}}
+            <div class="flex justify-between items-center px-14 py-8 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
+                    <i class="bi bi-play-circle-fill text-blue-500 text-2xl"></i>
+                    Panduan Penggunaan SIPANDU
+                </h3>
+                <button @click="closeTutorial()" class="text-gray-400 hover:text-red-500 transition-colors p-2">
+                    <i class="bi bi-x-lg text-xl"></i>
+                </button>
+            </div>
+        
+            {{-- Container Video (Rasio 16:9 agar tidak gepeng) --}}
+            <div class="relative w-full bg-black shadow-inner" style="padding-top: 56.25%; background: #000;">
+                <iframe class="absolute inset-0 w-full h-full" 
+                    src="https://www.youtube.com/embed/TESWT8O1ojE?autoplay=1&mute=0&rel=0" 
+                    title="Tutorial SIPANDU Bakorwil III Malang" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            </div>
+        
+            {{-- 3. Footer: Diperbaiki agar tidak mepet ke pinggir dan tombol lebih presisi --}}
+            <div class="px-14 py-12 bg-gray-50 dark:bg-[#111827] flex flex-col md:flex-row justify-between items-center gap-8">
+                <div class="flex items-start gap-4 flex-1">
+                    <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg flex-shrink-0">
+                        <i class="bi bi-info-circle text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                    <div class="max-w-sm">
+                        <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                            Tonton video panduan ini untuk memahami alur pengelolaan arsip di <strong>SIPANDU</strong> secara menyeluruh.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="w-full md:w-auto flex justify-center md:justify-end">
+                    <button @click="closeTutorial()" 
+                        class="group relative inline-flex items-center justify-center px-10 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-xl shadow-blue-500/30 transition-all transform hover:-translate-y-1 active:scale-95 whitespace-nowrap">
+                        <span>Mulai Gunakan Sistem</span>
+                        <i class="bi bi-arrow-right ml-2 transition-transform group-hover:translate-x-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Wrapper Utama Konten Dashboard --}}
     <div class="content-wrapper"> 
         
@@ -323,7 +400,13 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">Arsip Masuk Terbaru</h2>
                         {{-- Link Lihat Semua --}}
-                        <a href="{{ route('log.aktivitas', ['filterBidang' => $bidangSlug]) }}" style="font-size: 0.9rem; color: var(--primary); text-decoration: none; font-weight: 600;" wire:navigate>Lihat Semua &rarr;</a> 
+                        {{-- <a href="{{ route('log.aktivitas', ['filterBidang' => $bidangSlug]) }}" style="font-size: 0.9rem; color: var(--primary); text-decoration: none; font-weight: 600;" wire:navigate>Lihat Semua &rarr;</a>  --}}
+                        {{-- Menambahkan filterAksi => Tambah agar hanya menampilkan data baru --}}
+                        <a href="{{ route('log.aktivitas', ['filterBidang' => $bidangSlug, 'filterAksi' => 'Tambah']) }}" 
+                            style="font-size: 0.9rem; color: var(--primary); text-decoration: none; font-weight: 600;" 
+                            wire:navigate>
+                            Lihat Semua &rarr;
+                         </a>
                     </div>
                     
                     <div class="arsip-list-container">
