@@ -174,7 +174,7 @@
                 <div class="stat-card-top">
                     <div class="stat-content">
                         <div class="stat-text-group">
-                            <div class="stat-icon-title">TOTAL SAMPAH</div>
+                            <div class="stat-icon-title">TOTAL ISI KERANJANG SAMPAH</div>
                             <strong class="stat-value">{{ $stats['total'] }}</strong>
                         </div>
                         <div class="stat-icon-wrapper-circle" style="background-color: var(--color-red);">
