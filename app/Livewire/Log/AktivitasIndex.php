@@ -30,49 +30,40 @@ class AktivitasIndex extends Component
     public $filterBidang = '';
 
     #[Url]
+    public $filterDataBidang = ''; // [BARU] Filter Bidang Arsip (Data)
+
+    #[Url]
     public $filterAksi = '';
 
     public $tanggal_mulai = '';
     public $tanggal_selesai = '';
 
     public $isLockedMode = false;
+    public $isFromDashboard = false;
 
     public function mount()
     {
         $user = Auth::user();
 
-        // 1. Cek parameter URL
-        if (request()->has('filterBidang') && !empty(request('filterBidang'))) {
+        // [PERBAIKAN] Tangkap filter dari dashboard ke properti Data Bidang (Target), bukan Pelaku
+        if (request()->has('filterBidang')) {
+            $this->isFromDashboard = true; // Tandai bahwa user datang dari dashboard
             $val = request('filterBidang');
-
-            // Normalisasi 'sistem' -> 'super_admin' (jika dari Home)
-            if ($val === 'sistem') {
-                $val = 'super_admin';
-            }
-
-            // Jika dari Home (kosong/sistem/super_admin), reset filter jadi kosong
-            if ($val === 'super_admin' || $val === '') {
-                $this->filterBidang = '';
-                $this->isLockedMode = false; // Buka kunci
+            
+            // Normalisasi 'sistem' atau 'super_admin' untuk Super Admin
+            if (in_array($val, ['sistem', 'super_admin', ''])) {
+                $this->filterDataBidang = '';
             } else {
-                // Jika filter spesifik
-                $this->filterBidang = $val;
+                $this->filterDataBidang = $val;
                 
-                // [PERBAIKAN LOGIKA KUNCI]
-                // Kunci mode HANYA jika user BUKAN super_admin DAN BUKAN sekretariat
-                // Sekretariat boleh ganti-ganti filter (tapi terbatas opsinya nanti di View)
-                if ($user->role !== 'super_admin' && $user->role !== 'sekretariat') {
-                    $this->isLockedMode = true;
-                    $this->filterBidang = $user->role;
-                }
+                // // Kunci filter jika bukan Super Admin/Sekretariat (RBAC)
+                // if ($user->role !== 'super_admin' && $user->role !== 'sekretariat') {
+                //     $this->filterDataBidang = $user->role;
+                //     $this->isLockedMode = true;
+                // }
             }
-        } else {
-            // Jika tidak ada parameter URL
-            // User biasa (selain Super & Sekretariat) langsung terkunci
-            if ($user->role !== 'super_admin' && $user->role !== 'sekretariat') {
-                $this->isLockedMode = true;
-                $this->filterBidang = $user->role;
-            }
+            $this->filterBidang = '';
+            $this->filterAksi='';
         }
 
         $this->setHeaderAttributes();
@@ -223,33 +214,72 @@ class AktivitasIndex extends Component
 
     public function render()
     {
+        $user = Auth::user();
         $query = AktivitasSistem::with('user')->latest();
 
-        // [TAMBAHKAN INI] Logika filter berdasarkan aksi (Tambah, Ubah, Hapus)
+        // =========================================================
+        // 1. LOGIKA KEAMANAN DATA (RBAC) BERDASARKAN BIDANG ARSIP
+        // =========================================================
+        if ($user->role === 'super_admin') {
+            // Super Admin bisa melihat semua, filter data_bidang bersifat opsional
+            if (!empty($this->filterDataBidang)) {
+                $query->where('data_bidang', $this->filterDataBidang);
+            }
+
+            if ($this->filterAksi) {
+                $query->where('aksi', $this->filterAksi);
+            }
+        } 
+        elseif ($user->role === 'sekretariat') {
+            // Sekretariat melihat lingkupnya sendiri berdasarkan pemilik data
+            $lingkupSekre = ['sekretariat', 'umum_kepegawaian', 'keuangan', 'penyusunan_program'];
+            
+            if (!empty($this->filterDataBidang) && in_array($this->filterDataBidang, $lingkupSekre)) {
+                $query->where('data_bidang', $this->filterDataBidang);
+            } else {
+                $query->whereIn('data_bidang', $lingkupSekre);
+            }
+        } 
+        else {
+            // $query->where('aksi', 'Tambah');
+            // Admin Bidang (Sarpras, dll) HANYA bisa melihat data milik bidangnya
+            // Meskipun pelakunya Super Admin, datanya tetap muncul untuk admin bidang terkait
+            $query->where('data_bidang', $user->role);
+        }
+
+        // =========================================================
+        // 2. FILTER TAMBAHAN (Pencarian, Aksi, & Unit Pengolah)
+        // =========================================================
+        if ($this->filterBidang && $user->role === 'super_admin') { // Filter berdasarkan siapa yang melakukan (Unit Pengolah)
+            $query->where('bidang', $this->filterBidang);
+        }
+
         if ($this->filterAksi) {
             $query->where('aksi', $this->filterAksi);
         }
 
-        // Filter Pencarian
         if ($this->search) {
-            $query->where('deskripsi', 'like', '%' . $this->search . '%')
-                  ->orWhereHas('user', fn($q) => $q->where('name', 'like', '%' . $this->search . '%'));
-        }
-
-        // Filter Bidang (RBAC)
-        if (Auth::user()->role !== 'super_admin' && Auth::user()->role !== 'sekretariat') {
-            $query->where('bidang', Auth::user()->role);
-        } elseif (!empty($this->filterBidang)) {
-            $query->where('bidang', $this->filterBidang);
+            $query->where(function($q) {
+                $q->where('deskripsi', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('user', fn($sub) => $sub->where('name', 'like', '%' . $this->search . '%'));
+            });
         }
 
         // Filter Jenis Arsip (Modul)
         if ($this->filterJenis) {
-            $query->where('modul', 'like', '%' . $this->filterJenis . '%');
+            $query->where('modul', 'Arsip '. $this->filterJenis);
         }
 
+        // 2. [TAMBAHKAN INI] Filter Tanggal
+        if ($this->tanggal_mulai) {
+            $query->whereDate('created_at', '>=', $this->tanggal_mulai);
+        }
+        if ($this->tanggal_selesai) {
+            $query->whereDate('created_at', '<=', $this->tanggal_selesai);
+    }
+
         return view('livewire.log.aktivitas-index', [
-            'aktivitas' => $query->paginate(15)
+            'aktivitas' => $query->paginate(10)
         ])->title('Log Aktivitas Sistem');
     }
 }

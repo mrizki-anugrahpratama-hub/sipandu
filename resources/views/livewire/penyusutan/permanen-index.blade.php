@@ -237,17 +237,11 @@
                     @if(auth()->user()->role === 'super_admin') 
                         <div>
                             <label for="filterBidang">Filter Berdasarkan Bidang</label>
-                            
-                            {{-- LIST BIDANG HARDCODED SESUAI PERMINTAAN --}}
                             <select id="filterBidang" wire:model.live="filterBidang" class="form-select-sm">
                                 <option value="">Semua Bidang</option>
-                                <option value="Sub.Bagian Umum dan Kepegawaian">Sub.Bagian Umum dan Kepegawaian</option>
-                                <option value="Sub.Bagian Keuangan">Sub.Bagian Keuangan</option>
-                                <option value="Sub.Bagian Penyusunan Program dan Anggaran">Sub.Bagian Penyusunan Program dan Anggaran</option>
-                                <option value="Bidang Pemerintahan">Bidang Pemerintahan</option>
-                                <option value="Bidang Pembangunan Ekonomi">Bidang Pembangunan Ekonomi</option>
-                                <option value="Bidang Kemasyarakatan">Bidang Kemasyarakatan</option>
-                                <option value="Bidang Sarana dan Prasarana">Bidang Sarana dan Prasarana</option>
+                                @foreach ($bidangs as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
                             </select>
                         </div>
                     @endif
@@ -282,7 +276,7 @@
                             <th style="white-space: nowrap;" colspan="2">Nomor</th>
                             
                             <th style="white-space: nowrap; min-width: 120px; vertical-align: middle;" rowspan="2">
-                                BIDANG PENGOLAH
+                                UNIT PENGOLAH
                             </th>
                             
                             <th style="white-space: nowrap; min-width: 150px; vertical-align: middle;" rowspan="2">
@@ -360,7 +354,7 @@
                             
                             {{-- AKSI --}}
                             <td class="action-buttons text-center" onclick="event.stopPropagation();">
-                                <a href="{{ route('arsip.inaktif.show', $arsip->id) }}" class="btn-icon" title="Lihat Detail">
+                                <a href="{{ route('arsip.inaktif.show', $arsip->id) }}?from=permanen" class="btn-action btn-detail" title="Lihat Detail">
                                     <i class="bi bi-eye" style="color: var(--primary-blue);"></i>
                                 </a>
                             </td>

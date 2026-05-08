@@ -67,20 +67,10 @@ class InaktifIndex extends Component
         
         $effectiveSlug = $user->role; 
         
-        if ($user->role === 'super_admin') {
-            // Prioritas: URL/QueryString Filter ($this->filterBidang) > Session
-            if (!empty($this->filterBidang)) {
-                $effectiveSlug = $this->filterBidang;
-                Session::put('current_bidang', $this->filterBidang);
-            } else {
-                $currentBidangOnSession = Session::get('current_bidang');
-                if ($currentBidangOnSession) {
-                    $effectiveSlug = $currentBidangOnSession;
-                    $this->filterBidang = $currentBidangOnSession; // Sinkronkan dari Session
-                } else {
-                    $effectiveSlug = 'super_admin';
-                }
-            }
+        // Deteksi konteks bidang (terutama untuk Sekretariat/Super Admin)
+        $currentOnSession = Session::get('current_bidang');
+        if (in_array($user->role, ['super_admin', 'sekretariat']) && $currentOnSession) {
+            $effectiveSlug = $currentOnSession;
         }
 
         $roleMap = [
@@ -95,14 +85,9 @@ class InaktifIndex extends Component
             'super_admin' => 'ADMINISTRATOR UTAMA',
         ];
 
-        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT TIDAK DIKENAL';
+        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT KERJA';
         $this->namaBidangYangDibuka = Str::title(strtolower($namaDariMap));
-        
-        if ($effectiveSlug === 'super_admin') {
-            $this->slugBidangYangDibuka = null;
-        } else {
-            $this->slugBidangYangDibuka = $effectiveSlug;
-        }
+        $this->slugBidangYangDibuka = ($effectiveSlug === 'super_admin') ? null : $effectiveSlug;
     }
 
     public function updated($propertyName)
@@ -244,6 +229,8 @@ class InaktifIndex extends Component
                     return;
                 }
             }
+
+            $arsip->load('files');
             
             // Pindahkan ke Recycle Bin
             RecycleBin::create([

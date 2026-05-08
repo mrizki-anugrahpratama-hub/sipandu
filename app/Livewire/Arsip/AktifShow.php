@@ -90,6 +90,8 @@ class AktifShow extends Component
      * [DIGABUNG & DIPERBAIKI] Method untuk menghapus file.
      * Menggunakan logika modal konfirmasi saya + logika hapus Anda.
      */
+    // File: app/Livewire/Arsip/AktifShow.php
+
     public function deleteFile()
     {
         if (!$this->fileIdToDelete) {
@@ -99,31 +101,26 @@ class AktifShow extends Component
         try {
             $file = FileArsip::findOrFail($this->fileIdToDelete);
 
-            // 1. Hapus file fisik
-            if (Storage::disk('public')->exists($file->path_file)) {
+            // [PERBAIKAN] Cek string path_file sebelum cek ke storage
+            if ($file->path_file && Storage::disk('public')->exists($file->path_file)) {
                 Storage::disk('public')->delete($file->path_file);
             }
             
-            // 2. Simpan nama file untuk pesan sukses
             $namaFileAsli = $file->nama_file_asli;
-
-            // 3. Hapus record database
             $file->delete();
 
-            // 4. Hitung ulang jumlah total item di berkas induk
-            $totalJumlahItem = $this->arsip->files()->sum('jumlah');
-            $this->arsip->update(['jumlah' => $totalJumlahItem]);
+            // Update total jumlah di induk
+            $this->arsip->update([
+                'jumlah' => $this->arsip->files()->sum('jumlah')
+            ]);
 
-            // 5. Muat ulang data arsip (termasuk relasi files)
             $this->arsip = $this->arsip->fresh('files');
-
-            session()->flash('success', 'File "' . $namaFileAsli . '" berhasil dihapus.');
+            session()->flash('success', 'Data berhasil dihapus.');
 
         } catch (\Exception $e) {
             Log::error('Gagal hapus file: ' . $e->getMessage());
-            session()->flash('error', 'Gagal menghapus file.');
+            session()->flash('error', 'Gagal menghapus data.');
         } finally {
-            // Selalu tutup modal setelah selesai
             $this->cancelDelete();
         }
     }

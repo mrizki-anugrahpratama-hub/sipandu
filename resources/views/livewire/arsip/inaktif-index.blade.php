@@ -2,32 +2,20 @@
     {{-- [HEADER/BREADCRUMB] --}}
     <x-slot name="header">
         @php
-            $user = Auth::user();
-            $namaBidangFinal = 'Nama Bidang';
-            $slugBidangFinal = null;
-
-            // Logika untuk menentukan nama dan slug bidang yang sedang dibuka
-            if (isset($namaBidangYangDibuka) && isset($slugBidangYangDibuka)) {
-                $namaBidangFinal = $namaBidangYangDibuka;
-                $slugBidangFinal = $slugBidangYangDibuka;
-            } 
-            elseif (isset($user->bidang)) {
-                $namaBidangFinal = $user->bidang->nama;
-                $slugBidangFinal = $user->bidang->slug;
-            } elseif (isset($user->unit_kerja)) {
-                $namaBidangFinal = $user->unit_kerja->nama;
-                $slugBidangFinal = $user->unit_kerja->slug;
-            }
-
-            // Menentukan URL Bidang (dashboard)
-            $urlBidang = $slugBidangFinal ? route('dashboard.' . str_replace('_', '-', $slugBidangFinal)) : '#';
+            $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
+            
+            // PERBAIKAN: Tambahkan parameter filterBidang agar tetap terkunci di sub-bidang (misal: umpeg)
+            $urlArsipInaktif = route('arsip.inaktif.index', ['filterBidang' => $slugBidangYangDibuka]);
         @endphp
-
+    
         <div class="welcome-title-group">
             <h1>Daftar Berkas Inaktif</h1>
-            <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangFinal }}</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Arsip Inaktif</span>
+            <div class="breadcrumbs">
+                {{-- Nama bidang diambil langsung dari $namaBidangYangDibuka yang sudah diproses Controller --}}
+                <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <span class="breadcrumb-item active">Arsip Inaktif</span>
+            </div>
         </div>
     </x-slot>
 

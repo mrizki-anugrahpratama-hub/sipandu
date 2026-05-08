@@ -14,11 +14,12 @@ return new class extends Migration
         Schema::create('aktivitas_sistems', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('bidang'); // Role/bidang admin saat melakukan aksi
-            $table->string('aksi');   // Tambah, Ubah, Hapus
-            $table->string('modul');  // Nama tabel (Arsip Aktif, User, dll)
+            $table->string('bidang');      // Pelaku (Siapa yang mengubah)
+            $table->string('data_bidang'); // [BARU] Target (Data milik bidang mana)
+            $table->string('aksi');
+            $table->string('modul');
             $table->text('deskripsi'); 
-            $table->json('perubahan')->nullable(); // Data lama vs data baru
+            $table->json('perubahan')->nullable();
             $table->string('ip_address')->nullable();
             $table->timestamps();
         });

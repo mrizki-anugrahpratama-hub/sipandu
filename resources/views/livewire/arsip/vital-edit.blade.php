@@ -2,32 +2,22 @@
     {{-- [HEADER/BREADCRUMB] --}}
     <x-slot name="header">
         @php
-            $user = Auth::user();
-            $namaBidangFinal = 'Nama Bidang';
-            $slugBidangFinal = null;
-
-            if (isset($namaBidangYangDibuka) && isset($slugBidangYangDibuka)) {
-                $namaBidangFinal = $namaBidangYangDibuka;
-                $slugBidangFinal = $slugBidangYangDibuka;
-            } elseif (isset($user->bidang)) {
-                $namaBidangFinal = $user->bidang->nama;
-                $slugBidangFinal = $user->bidang->slug;
-            } elseif (isset($user->unit_kerja)) {
-                $namaBidangFinal = $user->unit_kerja->nama;
-                $slugBidangFinal = $user->unit_kerja->slug;
-            }
-
-            $urlBidang = $slugBidangFinal ? route('dashboard.' . str_replace('_', '-', $slugBidangFinal)) : '#';
+            $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
+                
+            // PERBAIKAN: Tambahkan parameter filterBidang agar tetap terkunci di sub-bidang (misal: umpeg)
+            $urlArsipVital = route('arsip.vital.index', ['filterBidang' => $slugBidangYangDibuka]);
         @endphp
-
+    
         <div class="welcome-title-group">
-            <h1>Ubah Arsip Vital</h1>
-            
-            <a href="{{ $urlBidang }}" class="breadcrumb-item">{{ $namaBidangYangDibuka }}</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <a href="{{ route('arsip.vital.index') }}" class="breadcrumb-item">Arsip Vital</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Ubah</span>
+            <h1>Ubah Berkas Vital</h1>
+            <div class="breadcrumbs">
+                {{-- Nama bidang diambil dari $namaBidangYangDibuka yang dideteksi dari arsipnya --}}
+                <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <a href="{{ $urlArsipVital }}" class="breadcrumb-item active">Arsip Vital</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <span class="breadcrumb-item active">Ubah Data</span>
+            </div>
         </div>
     </x-slot>
 

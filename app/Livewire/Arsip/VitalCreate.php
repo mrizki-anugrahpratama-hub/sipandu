@@ -42,14 +42,15 @@ class VitalCreate extends Component
     public function mount()
     {
         $user = Auth::user();
-        
-        $effectiveSlug = $user->role; 
-        if ($user->role === 'super_admin') {
-            $currentBidangOnSession = Session::get('current_bidang');
-            if ($currentBidangOnSession) {
-                $effectiveSlug = $currentBidangOnSession;
-            }
+    
+        // [PERBAIKAN 1] Tentukan Slug Efektif: Prioritaskan Session untuk Sekretariat & Super Admin
+        $effectiveSlug = $user->role;
+        $currentBidangOnSession = Session::get('current_bidang');
+
+        if (in_array($user->role, ['super_admin', 'sekretariat']) && $currentBidangOnSession) {
+            $effectiveSlug = $currentBidangOnSession;
         }
+
 
         $roleMap = [
             'pemerintahan' => 'BIDANG PEMERINTAHAN',
@@ -63,13 +64,12 @@ class VitalCreate extends Component
             'super_admin' => 'ADMINISTRATOR UTAMA',
         ];
 
-        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT TIDAK DIKENAL';
+        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT KERJA';
         $this->namaBidangYangDibuka = Str::title(strtolower($namaDariMap));
-        
         $this->slugBidangYangDibuka = ($effectiveSlug === 'super_admin') ? null : $effectiveSlug;
-
-        // Set default Tahun ini untuk memudahkan
+    
         $this->bulan_tahun = date('Y');
+        
     }
 
     // === LOGIC AUTO FILL (BARU) ===
@@ -203,7 +203,7 @@ class VitalCreate extends Component
             ]);
 
             session()->flash('success', 'Arsip Vital berhasil ditambahkan!');
-            return redirect()->route('arsip.vital.index');
+            return redirect()->route('arsip.vital.index', ['filterBidang' => $this->slugBidangYangDibuka]);
             
         } catch (\Exception $e) {
             session()->flash('error', 'Gagal menyimpan arsip: ' . $e->getMessage());

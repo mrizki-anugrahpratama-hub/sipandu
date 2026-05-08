@@ -2,23 +2,74 @@
     {{-- 1. HEADER --}}
     <x-slot name="header">
         @php
-            $urlBidang = $slugBidangFinal ? route('dashboard.' . str_replace('_', '-', $slugBidangFinal)) : '#';
-            $urlArsipVital = route('arsip.vital.index');
+            $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
+            
+            // PERBAIKAN: Tambahkan parameter filterBidang agar tetap terkunci di sub-bidang (misal: umpeg)
+            $urlArsipVital = route('arsip.vital.index', ['filterBidang' => $slugBidangYangDibuka]);
         @endphp
-
+    
         <div class="welcome-title-group">
-            <h1>Detail Arsip Vital</h1>
-            <a href="{{ $urlBidang }}" class="breadcrumb-item">{{ $namaBidangFinal }}</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <a href="{{ $urlArsipVital }}" class="breadcrumb-item">Arsip Vital</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Detail Arsip</span>
+            <h1>Detail Arsip</h1>
+            <div class="breadcrumbs">
+                <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                
+                {{-- Sekarang link ini membawa filter --}}
+                <a href="{{ $urlArsipVital }}" class="breadcrumb-item active">Arsip Vital</a>
+                
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <span class="breadcrumb-item active">Detail Arsip</span>
+            </div>
         </div>
     </x-slot>
 
     {{-- 2. CSS KHUSUS HALAMAN DETAIL (Diadaptasi dari Desain Arsip Inaktif) --}}
     @push('styles')
     <style>
+        /* ==================== CSS IDENTIK DENGAN ARSIP AKTIF ==================== */
+        .detail-card { background-color: var(--bg-white); border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
+        body.dark-mode .detail-card { background-color: var(--bg-sidebar); }
+        
+        /* Tabel Style: Dark Header */
+        .data-table th { 
+            background-color: #1f2937; color: #ffffff; font-weight: 600; 
+            text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; 
+            padding: 16px; border-bottom: 1px solid #374151; text-align: left; 
+        }
+        body.dark-mode .data-table th { background-color: #111827; }
+        .data-table td { padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
+
+        /* ==================== MODAL CUSTOM (DNA ARSIP AKTIF) ==================== */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1050; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-content-custom { background: var(--bg-white); border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; animation: slideUp 0.3s ease-out; border: 1px solid var(--border-color); }
+        body.dark-mode .modal-content-custom { background-color: var(--bg-sidebar); }
+
+        .modal-header-custom { padding: 20px 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-active); }
+        .modal-header-custom h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+        .modal-body-custom { padding: 24px; max-height: 80vh; overflow-y: auto; }
+        .modal-footer-custom { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 12px; background: var(--bg-main); }
+
+        /* Grid Internal Modal */
+        .modal-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+        @media (max-width: 850px) { .modal-form-grid { grid-template-columns: 1fr; } }
+
+        /* Preview & Upload Wrapper */
+        .file-upload-wrapper { border: 2px dashed var(--border-color); border-radius: var(--radius-lg); padding: 20px; text-align: center; background-color: var(--bg-main); position: relative; min-height: 350px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .preview-frame { width: 100%; height: 350px; border-radius: 8px; border: 1px solid var(--border-color); overflow-y: auto; background: #fff; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+        .preview-frame embed, .preview-frame img { width: 100%; min-height: 100%; display: block; object-fit: contain; }
+        .file-input-hidden { display: none; }
+
+        /* Fullscreen Overlay */
+        .fullscreen-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.95); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .fullscreen-content { width: 90%; height: 85%; background: #fff; border-radius: 8px; overflow: hidden; }
+        .fullscreen-content embed, .fullscreen-content img { width: 100%; height: 100%; object-fit: contain; }
+        .close-fullscreen { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 2.5rem; cursor: pointer; }
+
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .spin { animation: rotate 1s linear infinite; }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    
         /* [CSS UTAMA GRID KEY-VALUE] */
         .detail-grid {
             /* 4 Kolom Visual: Label, Separator, Value | Label, Separator, Value */
@@ -207,11 +258,15 @@
                     
                     {{-- HEADER DETAIL --}}
                     <h3 class="detail-header">
-                        Informasi Berkas: {{ $arsip->nomor_berkas }}
+                        {{-- Informasi Berkas: {{ $arsip->nomor_berkas }} --}}
+                        Informasi Berkas
                     </h3>
                     
                     <div class="detail-grid">
                         {{-- MAPPING DATA ARSIP VITAL KE GRID LAYOUT BARU --}}
+                        {{-- Uraian arsip vital ngambil dari isi berkas --}}
+                        <div class="detail-item"><span class="detail-label">Uraian</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->isi_berkas }}</span></div>
+                        <div class="detail-item"><span class="detail-label"></span><span class="detail-separator"></span><span class="detail-value"></span></div>
                         
                         {{-- BARIS 1 --}}
                         {{-- [PERBAIKAN] Menghapus warna khusus pada Asal Arsip agar seragam --}}
@@ -223,7 +278,7 @@
                         <div class="detail-item"><span class="detail-label">Jenis / Series Arsip</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->jenis_series_arsip }}</span></div>
 
                         {{-- BARIS 3 --}}
-                        <div class="detail-item"><span class="detail-label">Isi Berkas</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->isi_berkas }}</span></div>
+                        {{-- <div class="detail-item"><span class="detail-label">Isi Berkas</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->isi_berkas }}</span></div> --}}
                         <div class="detail-item"><span class="detail-label">Bulan / Tahun</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->bulan_tahun }}</span></div>
 
                         {{-- BARIS 4 --}}
@@ -269,12 +324,14 @@
                             <thead>
                                 <tr>
                                     {{-- Tambahkan width yang cukup --}}
-                                    <th class="text-center" style="width: 60px;">No</th>
-                                    <th>Uraian Informasi Arsip</th>
-                                    <th class="text-center" style="width: 160px;">Tanggal Berkas</th>
-                                    <th class="text-center" style="width: 120px;">Jumlah Item</th>
-                                    <th style="width: 180px;">Tingkat Perkembangan</th>
-                                    <th class="text-center" style="width: 120px;">Aksi</th>
+                                    <th class="text-center" style="width: 8%;">No Item</th>
+                                    <th class="text-center" style="width: 10%;">Kode Klas.</th>
+                                    <th class="text-center"> Uraian Informasi Arsip</th>
+                                    <th class="text-center" style="width: 10%;">Status</th>
+                                    <th class="text-center" style="width: 12%;">Tgl. Berkas</th>
+                                    <th class="text-center" style="width: 10%;">Kuantitas</th>
+                                    <th class="text-center" style="width: 12%;">Perkembangan</th>
+                                    <th class="text-center" style="width: 11%;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -282,11 +339,21 @@
                                     <tr>
                                         <td class="text-center">{{ $loop->iteration }}</td> 
                                         
+                                        <td>{{ $arsip->kode_klasifikasi }}</td>
+                                        
                                         {{-- Menggunakan fallback uraian dan menghapus Kode Klasifikasi/No Berkas yang redundan --}}
                                         <td>
                                             <div style="font-weight: 500;">{{ $file->uraian_informasi ?? ($file->uraian ?? $arsip->uraian) }}</div>
                                             {{-- Opsional: Tampilkan kapan diupload --}}
                                             <small style="color: var(--text-secondary); display: block; margin-top: 4px;">Upload: {{ $file->created_at->format('d/m/Y H:i') }}</small>
+                                        </td>
+
+                                        <td class="text-center">
+                                            @if($file->path_file)
+                                                <span class="badge bg-success" style="font-size: 0.75rem;"><i class="bi bi-file-earmark-check"></i> Ada File</span>
+                                            @else
+                                                <span class="badge bg-warning text-dark" style="font-size: 0.75rem;"><i class="bi bi-card-text"></i> Metadata</span>
+                                            @endif
                                         </td>
                                         
                                         {{-- Tanggal File --}}
@@ -294,21 +361,16 @@
                                             {{ $file->tanggal_file?->format('d M Y') ?? '-' }}
                                         </td>
                                         
-                                        <td class="text-center">{{ $file->jumlah ?? ($arsip->jumlah ?? '-') }}</td>
-                                        <td>{{ $file->tingkat_perkembangan ?? ($arsip->tingkat_perkembangan ?? '-') }}</td>
+                                        <td class="text-center">{{ $file->jumlah }} {{ $file->satuan ?? 'Lembar' }}</td>
+                                        <td class="text-center">{{ $file->tingkat_perkembangan ?? ($arsip->tingkat_perkembangan ?? '-') }}</td>
                                         
                                         <td class="text-center">
                                             <div class="action-buttons">
-                                                <a href="{{ Storage::url($file->path_file) }}" target="_blank" class="btn-icon" title="Lihat File">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
-                                                
-                                                <button wire:click.prevent="deleteFile({{ $file->id }})" 
-                                                        wire:confirm="Yakin ingin menghapus file ini?"
-                                                        class="btn-icon btn-icon-danger" 
-                                                        title="Hapus File">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
+                                                @if($file->path_file)
+                                                    <a href="{{ Storage::url($file->path_file) }}" target="_blank" class="btn-icon"><i class="bi bi-eye"></i></a>
+                                                @endif
+                                                <button wire:click="openModal({{ $file->id }})" class="btn-icon"><i class="bi bi-pencil-square"></i></button>
+                                                <button wire:click="confirmFileDelete({{ $file->id }})" class="btn-icon btn-icon-danger"><i class="bi bi-trash"></i></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -329,72 +391,142 @@
         </div>
     </div>
 
-    {{-- 5. MODAL TAMBAH FILE --}}
+    {{-- 5. MODAL TAMBAH/EDIT FILE (VITAL STYLE WITH AKTIF DNA) --}}
     @if($isModalOpen)
-    <div class="modal-overlay">
-        <div class="modal-content-custom">
+    <div class="modal-overlay" 
+        x-data="{ 
+            isNew: false, 
+            pUrl: @entangle('previewUrl'), 
+            fType: @entangle('fileType'), 
+            showFull: @entangle('showFull'),
+            fileName: '' 
+        }">
+        <div class="modal-content-custom" style="max-width: 1000px; width: 95%;">
             <div class="modal-header-custom">
-                <h3>Tambah File Arsip</h3>
-                <button wire:click="closeModal" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color: var(--text-primary);"><i class="bi bi-x-lg"></i></button>
+                <h3><i class="bi bi-file-earmark-medical"></i> {{ $isEditMode ? 'Ubah Item Berkas Vital' : 'Unggah Item Berkas Vital' }}</h3>
+                <button wire:click="closeModal" class="btn-icon" style="color: var(--text-secondary);"><i class="bi bi-x-lg"></i></button>
             </div>
             
             <form wire:submit.prevent="saveFile">
                 <div class="modal-body-custom">
-                    
-                    {{-- Uraian --}}
-                    <div class="form-group">
-                        <label class="form-label">Uraian Informasi <span style="color:red">*</span></label>
-                        <textarea wire:model="uraian" class="form-control" rows="2" placeholder="Contoh: SK Pengangkatan..."></textarea>
-                        @error('uraian') <span class="text-error">{{ $message }}</span> @enderror
-                    </div>
+                    <div class="modal-form-grid">
+                        {{-- KOLOM KIRI: METADATA --}}
+                        <div>
+                            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 20px; color: var(--primary-blue);">1. Detail Informasi File</h4>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Uraian Informasi Arsip <span class="text-danger">*</span></label>
+                                <textarea wire:model="uraian" class="form-control @error('uraian') is-invalid @enderror" 
+                                        rows="3" placeholder="Contoh: Akta Pendirian, Sertifikat Tanah..."></textarea>
+                                <small class="form-helper" style="color: var(--text-secondary); font-size: 0.75rem;">Beri nama/deskripsi singkat untuk file digital ini.</small>
+                                @error('uraian') <span class="text-error">{{ $message }}</span> @enderror
+                            </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        {{-- Tanggal --}}
-                        <div class="form-group">
-                            <label class="form-label">Tanggal File <span style="color:red">*</span></label>
-                            <input type="date" wire:model="tanggal_file" class="form-control">
-                            @error('tanggal_file') <span class="text-error">{{ $message }}</span> @enderror
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px;">
+                                <div class="form-group">
+                                    <label class="form-label">Tanggal Berkas</label>
+                                    <input type="date" wire:model="tanggal_file" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Kuantitas</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="number" wire:model="jumlah" class="form-control" style="width: 80px;" min="1">
+                                        <select wire:model="satuan" class="form-control">
+                                            <option value="Lembar">Lembar</option>
+                                            <option value="Sampul">Sampul</option>
+                                            <option value="Berkas">Berkas</option>
+                                            <option value="Buku">Buku</option>
+                                            <option value="Eksemplar">Eksemplar</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label class="form-label">Tingkat Perkembangan</label>
+                                <select wire:model="tingkat_perkembangan" class="form-control">
+                                    <option value="Asli">Asli</option>
+                                    <option value="Fotokopi">Fotokopi</option>
+                                    <option value="Salinan">Salinan</option>
+                                </select>
+                            </div>
                         </div>
 
-                        {{-- Jumlah --}}
-                        <div class="form-group">
-                            <label class="form-label">Jumlah (Lembar) <span style="color:red">*</span></label>
-                            <input type="number" wire:model="jumlah" class="form-control" min="1">
-                            @error('jumlah') <span class="text-error">{{ $message }}</span> @enderror
+                        {{-- KOLOM KANAN: PREVIEW AREA --}}
+                        <div style="display: flex; flex-direction: column;">
+                            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 20px; color: var(--primary-blue);">2. Pratinjau File Digital</h4>
+                            
+                            <div class="file-upload-wrapper">
+                                <input type="file" id="file_baru" x-ref="fileInput" wire:model="file_baru" class="file-input-hidden" 
+                                    @change="
+                                        isNew = true; 
+                                        const f = $event.target.files[0]; 
+                                        fType = f.type; 
+                                        pUrl = URL.createObjectURL(f);
+                                        fileName = f.name;
+                                    ">
+                                
+                                <div style="width: 100%;">
+                                    {{-- State: ADA PREVIEW (Lama atau Baru) --}}
+                                    <template x-if="pUrl">
+                                        <div class="preview-area">
+                                            <div class="preview-frame">
+                                                <template x-if="fType && fType.startsWith('image/')"><img :src="pUrl"></template>
+                                                <template x-if="fType === 'application/pdf'"><embed :src="pUrl" type="application/pdf"></template>
+                                            </div>
+                                            <div class="preview-actions" style="margin-top: 12px; display: flex; justify-content: center; gap: 10px;">
+                                                <button type="button" class="btn btn-secondary btn-sm" @click="$refs.fileInput.click()">
+                                                    <i class="bi bi-arrow-repeat"></i> Ganti File
+                                                </button>
+                                                <button type="button" class="btn btn-primary btn-sm" @click="showFull = true">
+                                                    <i class="bi bi-arrows-fullscreen"></i> Full Screen
+                                                </button>
+                                            </div>
+                                            <div style="text-align: center; margin-top: 10px;">
+                                                <span class="badge bg-primary" x-show="isNew">File Baru Dipilih</span>
+                                                <span class="badge bg-success" x-show="!isNew">File Saat Ini</span>
+                                                <p x-show="isNew" x-text="fileName" style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 5px;"></p>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    {{-- State: KOSONG --}}
+                                    <template x-if="!pUrl">
+                                        <div @click="$refs.fileInput.click()" style="cursor:pointer; padding: 40px 0;">
+                                            <i class="bi bi-cloud-arrow-up-fill" style="font-size: 3.5rem; color: var(--primary-blue); opacity: 0.6;"></i>
+                                            <p style="font-weight: 600; margin-top: 10px;">Klik untuk upload file digital</p>
+                                            <small class="text-muted">Format: PDF, JPG, PNG (Maks 10MB)</small>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            @error('file_baru') <span class="text-error" style="margin-top: 8px;">{{ $message }}</span> @enderror
                         </div>
                     </div>
-
-                    {{-- Tingkat Perkembangan --}}
-                    <div class="form-group">
-                        <label class="form-label">Tingkat Perkembangan <span style="color:red">*</span></label>
-                        <select wire:model="tingkat_perkembangan" class="form-control">
-                            <option value="Asli">Asli</option>
-                            <option value="Fotokopi">Fotokopi</option>
-                            <option value="Salinan">Salinan</option>
-                            <option value="Pertinggal">Pertinggal</option>
-                        </select>
-                        @error('tingkat_perkembangan') <span class="text-error">{{ $message }}</span> @enderror
-                    </div>
-
-                    {{-- Upload File --}}
-                    <div class="form-group">
-                        <label class="form-label">Upload Dokumen (PDF/Gambar) <span style="color:red">*</span></label>
-                        <input type="file" wire:model="file_upload" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-                        <div wire:loading wire:target="file_upload" style="font-size: 0.85rem; color: var(--primary-blue); margin-top: 5px;">
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sedang mengupload...
-                        </div>
-                        @error('file_upload') <span class="text-error">{{ $message }}</span> @enderror
-                    </div>
-
                 </div>
 
                 <div class="modal-footer-custom">
                     <button type="button" wire:click="closeModal" class="btn btn-secondary">Batal</button>
-                    <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="file_upload">
-                        <i class="bi bi-save"></i> Simpan
+                    <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="file_baru, saveFile">
+                        <span wire:loading.remove wire:target="saveFile"><i class="bi bi-save"></i> Simpan Data</span>
+                        <span wire:loading wire:target="saveFile"><i class="bi bi-arrow-repeat spin"></i> Memproses...</span>
                     </button>
                 </div>
             </form>
+        </div>
+
+        {{-- 6. FULLSCREEN OVERLAY (TETAP BISA DIAKSES DARI MODAL) --}}
+        <div x-show="showFull" 
+            x-transition 
+            class="fullscreen-overlay" 
+            @keydown.escape.window="showFull = false" 
+            style="display: none;">
+            <span class="close-fullscreen" @click="showFull = false">&times;</span>
+            <div class="fullscreen-content" @click.away="showFull = false">
+                <template x-if="fType && fType.startsWith('image/')"><img :src="pUrl"></template>
+                <template x-if="fType === 'application/pdf'"><embed :src="pUrl" type="application/pdf"></template>
+            </div>
+            <p style="color: #ccc; margin-top: 15px;">Tekan <b>ESC</b> untuk menutup</p>
         </div>
     </div>
     @endif

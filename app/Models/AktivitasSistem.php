@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class AktivitasSistem extends Model
 {
     protected $fillable = [
-        'user_id', 'bidang', 'aksi', 'modul', 'deskripsi', 'perubahan', 'ip_address'
+        'user_id', 'bidang', 'data_bidang', 'aksi', 'modul', 'deskripsi', 'perubahan', 'ip_address'
     ];
 
     protected $casts = [

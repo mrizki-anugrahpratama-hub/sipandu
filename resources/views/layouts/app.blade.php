@@ -1691,48 +1691,30 @@
                     @if(Auth::user()->role === 'super_admin')
                     <li class="has-submenu">
                         @php
-                        $sekretariatGroup = ['umum_kepegawaian', 'keuangan', 'penyusunan_program', 'sekretariat'];
-                        $isSekretariatActive = in_array($activeBidang, $sekretariatGroup);
-
-                        // // Induk aktif
-                        // $isSekretariatActive = (
-                        // (request()->routeIs('dashboard.umum-kepegawaian') || request()->routeIs('dashboard.keuangan') || request()->routeIs('dashboard.penyusunan-program')) ||
-                        // (($isArsipSpecificActive || $isLogActive) && in_array($activeBidang, $sekretariatGroup))
-                        // );
-
-                        // Anak aktif
-                        // $isUmumLinkActive = (request()->routeIs('dashboard.umum-kepegawaian') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'umum_kepegawaian'));
-                        // $isKeuanganLinkActive = (request()->routeIs('dashboard.keuangan') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'keuangan'));
-                        // $isProgramLinkActive = (request()->routeIs('dashboard.penyusunan-program') || (($isLogActive || $isArsipSpecificActive) && $activeBidang === 'penyusunan_program'));
+                            $sekretariatGroup = ['umum_kepegawaian', 'keuangan', 'penyusunan_program', 'sekretariat'];
+                            
+                            // [PERBAIKAN LOGIKA] Hanya anggap Sekretariat aktif jika berada di dashboard sub-bidangnya 
+                            // atau sedang memfilter log sub-bidang tersebut.
+                            $isSekretariatActive = in_array($activeBidang, $sekretariatGroup) && 
+                                                  !request()->routeIs('manajemen.akun.*') && 
+                                                  !request()->routeIs('penyusutan.*');
                         @endphp
-
-                        {{-- FLEX CONTAINER: Menjaga panah tetap di samping teks --}}
+                    
                         <div class="nav-link-wrapper {{ $isSekretariatActive ? 'active' : '' }}">
-                            {{-- PERBAIKAN: Link Utama Sekretariat langsung masuk ke sub-bidang pertama --}}
+                            {{-- Link Utama: Menuju dashboard umum --}}
                             <a href="{{ route('dashboard.umum-kepegawaian') }}" wire:navigate>
-                                <i class="bi bi-building"></i> <span>Sekretariat</span>
+                                <i class="bi bi-building"></i> 
+                                <span>Sekretariat</span>
                             </a>
+                            {{-- [PERBAIKAN POSISI] Panah dipindah keluar <a> agar tidak memicu link saat diklik --}}
                             <i class="bi {{ $isSekretariatActive ? 'bi-chevron-up' : 'bi-chevron-down' }} submenu-toggle"></i>
                         </div>
-                
+                    
                         <ul class="submenu {{ $isSekretariatActive ? 'open' : '' }}">
                             <li><a href="{{ route('dashboard.umum-kepegawaian') }}" class="{{ $activeBidang === 'umum_kepegawaian' ? 'active' : '' }}" wire:navigate>Sub. Umum & Kepeg.</a></li>
                             <li><a href="{{ route('dashboard.keuangan') }}" class="{{ $activeBidang === 'keuangan' ? 'active' : '' }}" wire:navigate>Sub. Keuangan</a></li>
                             <li><a href="{{ route('dashboard.penyusunan-program') }}" class="{{ $activeBidang === 'penyusunan_program' ? 'active' : '' }}" wire:navigate>Sub. Program</a></li>
                         </ul>
-
-                        {{-- <div class="d-flex align-items-center">
-                            <a href="{{ route('dashboard.sekretariat') }}" class="{{ $isSekretariatActive ? 'active' : '' }}" style="flex-grow: 1;">
-                                <i class="bi bi-building"></i> <span>Sekretariat</span>
-                            </a>
-                            <i class="bi bi-chevron-down submenu-toggle" style="cursor:pointer; padding: 10px;"></i>
-                        </div> --}}
-
-                        {{-- <ul class="submenu {{ $isSekretariatActive ? 'open' : '' }}">
-                            <li><a href="{{ route('dashboard.umum-kepegawaian') }}" class="{{ $isUmumLinkActive ? 'active' : '' }}" wire:navigate>Sub. Umum & Kepeg.</a></li>
-                            <li><a href="{{ route('dashboard.keuangan') }}" class="{{ $isKeuanganLinkActive ? 'active' : '' }}" wire:navigate>Sub. Keuangan</a></li>
-                            <li><a href="{{ route('dashboard.penyusunan-program') }}" class="{{ $isProgramLinkActive ? 'active' : '' }}" wire:navigate>Sub. Program</a></li>
-                        </ul> --}}
                     </li>
 
                     {{-- 🟢 KONDISI 2: AKUN SEKRETARIAT (TAMPIL FLAT) 🟢 --}}
@@ -1774,27 +1756,51 @@
                     {{-- 🟢 MENU LAINNYA (HANYA UNTUK SUPER ADMIN) 🟢 --}}
                     @if(Auth::user()->role === 'super_admin')
                     <li>
-                        @php $isPemerintahanActive = (request()->routeIs('dashboard.pemerintahan') || (($isArsipSpecificActive || $isLogActive) && $activeBidang == 'pemerintahan')); @endphp
+                        {{-- @php $isPemerintahanActive = (request()->routeIs('dashboard.pemerintahan') || (($isArsipSpecificActive || $isLogActive) && $activeBidang == 'pemerintahan')); @endphp
                         <a href="{{ route('dashboard.pemerintahan') }}" class="{{ $isPemerintahanActive ? 'active' : '' }}" wire:navigate>
                             <i class="bi bi-bank"></i><span>Pemerintahan</span>
+                        </a> --}}
+                        <a href="{{ route('dashboard.pemerintahan') }}" 
+                            class="menu-item {{ (request()->routeIs('dashboard.pemerintahan') || (request()->routeIs('log.aktivitas') && request('filterBidang') === 'pemerintahan')) ? 'active' : '' }}" 
+                            wire:navigate>
+                            <i class="bi bi-bank"></i>
+                            <span>Pemerintahan</span>
                         </a>
                     </li>
                     <li>
-                        @php $isPembangunanActive = (request()->routeIs('dashboard.pembangunan-ekonomi') || (($isArsipSpecificActive || $isLogActive) && $activeBidang == 'pembangunan_ekonomi')); @endphp
+                        {{-- @php $isPembangunanActive = (request()->routeIs('dashboard.pembangunan-ekonomi') || (($isArsipSpecificActive || $isLogActive) && $activeBidang == 'pembangunan_ekonomi')); @endphp
                         <a href="{{ route('dashboard.pembangunan-ekonomi') }}" class="{{ $isPembangunanActive ? 'active' : '' }}" wire:navigate>
                             <i class="bi bi-graph-up-arrow"></i><span>Pembangunan</span>
-                        </a>
+                        </a> --}}
+                        <a href="{{ route('dashboard.pembangunan-ekonomi') }}" 
+                            class="menu-item {{ (request()->routeIs('dashboard.pembangunan-ekonomi') || (request()->routeIs('log.aktivitas') && request('filterBidang') === 'pembangunan-ekonomi')) ? 'active' : '' }}" 
+                            wire:navigate>
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Pembangunan</span>
+                        </a> 
                     </li>
                     <li>
-                        @php $isKemasyarakatanActive = (request()->routeIs('dashboard.kemasyarakatan') || (($isArsipSpecificActive || $isLogActive) && $activeBidang == 'kemasyarakatan')); @endphp
+                        {{-- @php $isKemasyarakatanActive = (request()->routeIs('dashboard.kemasyarakatan') || (($isArsipSpecificActive || $isLogActive) && $activeBidang == 'kemasyarakatan')); @endphp
                         <a href="{{ route('dashboard.kemasyarakatan') }}" class="{{ $isKemasyarakatanActive ? 'active' : '' }}" wire:navigate>
                             <i class="bi bi-people"></i><span>Kemasyarakatan</span>
+                        </a> --}}
+                        <a href="{{ route('dashboard.kemasyarakatan') }}" 
+                            class="menu-item {{ (request()->routeIs('dashboard.kemasyarakatan') || (request()->routeIs('log.aktivitas') && request('filterBidang') === 'kemasyarakatan')) ? 'active' : '' }}" 
+                            wire:navigate>
+                            <i class="bi bi-people"></i>
+                            <span>Kemasyarakatan</span>
                         </a>
                     </li>
                     <li>
-                        @php $isSaranaActive = (request()->routeIs('dashboard.sarana-prasarana') || (($isArsipSpecificActive || $isLogActive) && $activeBidang == 'sarana_prasarana')); @endphp
+                        {{-- @php $isSaranaActive = (request()->routeIs('dashboard.sarana-prasarana') || (($isArsipSpecificActive || $isLogActive) && $activeBidang == 'sarana_prasarana')); @endphp
                         <a href="{{ route('dashboard.sarana-prasarana') }}" class="{{ $isSaranaActive ? 'active' : '' }}" wire:navigate>
                             <i class="bi bi-signpost-split"></i><span>Sarana & Prasarana</span>
+                        </a> --}}
+                        <a href="{{ route('dashboard.sarana-prasarana') }}" 
+                            class="menu-item {{ (request()->routeIs('dashboard.sarana-prasarana') || (request()->routeIs('log.aktivitas') && request('filterBidang') === 'sarana-prasarana')) ? 'active' : '' }}" 
+                            wire:navigate>
+                            <i class="bi bi-signpost-split"></i>
+                            <span>Sarana Prasarana</span>
                         </a>
                     </li>
                     @endif
@@ -1822,7 +1828,8 @@
                     </li>
                     <li>
                         @if(Auth::user()->role === 'super_admin')
-                        <a href="{{ route('manajemen.akun.index') }}" class="menu-item {{ request()->routeIs('manajemen.akun.*') ? 'active' : '' }}">
+                        <a href="{{ route('manajemen.akun.index') }}" 
+                        class="menu-item {{ request()->routeIs('manajemen.akun.*') ? 'active' : '' }}">
                             <i class="bi bi-person-gear"></i>
                             <span>Manajemen Akun</span>
                         </a>
@@ -1836,8 +1843,10 @@
                             <span>Log Aktivitas</span>
                         </a> --}}
 
+                        {{-- Sidebar: Menu Log Aktivitas --}}
                         <a href="{{ route('log.aktivitas') }}" 
-                           class="menu-item {{ (request()->routeIs('log.aktivitas') && request('filterAksi') !== 'Tambah') ? 'active' : '' }}" wire:navigate>
+                            class="menu-item {{ (request()->routeIs('log.aktivitas') && !request()->has('filterBidang') && request('filterAksi') !== 'Tambah') ? 'active' : '' }}" 
+                            wire:navigate>
                             <i class="bi bi-clock-history"></i>
                             <span>Log Aktivitas</span>
                         </a>
@@ -1846,7 +1855,7 @@
 
                     <li>
                         <a href="{{ route('recycle-bin.index') }}" class="{{ request()->routeIs('recycle-bin.*') ? 'active' : '' }}" wire:navigate>
-                            <i class="bi bi-trash"></i> <span>Recycle Bin</span>
+                            <i class="bi bi-trash"></i> <span>Keranjang Sampah</span>
                         </a>
                     </li>
                 </ul>
@@ -1877,7 +1886,7 @@
                     @else
                     {{-- Bagian ini adalah kode LAMA Anda, untuk halaman non-Livewire --}}
                     <div class="welcome-title-group">
-                        <h1>{{ $title ?? 'Dashboard' }}</h1>
+                        <h1>{{ $title ?? 'Dasbor' }}</h1>
                         @hasSection('breadcrumbs')
                         @yield('breadcrumbs')
                         @else
@@ -1960,6 +1969,10 @@
 
             /// app.blade.php (Bagian Script)
             document.addEventListener("livewire:navigated", function() {
+                if (localStorage.getItem("sidebarStatus") === "collapsed" && window.innerWidth > 992) {
+                    document.body.classList.add("sidebar-collapsed");
+                }
+
                 function closeAllSubmenus(except = null) {
                     document.querySelectorAll(".submenu.open").forEach(function(sub) {
                         // HANYA tutup jika submenu tersebut bukan yang sedang kita interaksi
@@ -2031,9 +2044,15 @@
                         if (window.innerWidth <= 992) {
                             document.body.classList.add("sidebar-mobile-open");
                         } else {
+                            // Toggle class
                             document.body.classList.toggle("sidebar-collapsed");
+                            
+                            // [TAMBAHAN] Simpan status ke LocalStorage agar awet saat pindah menu
                             if (document.body.classList.contains("sidebar-collapsed")) {
+                                localStorage.setItem("sidebarStatus", "collapsed");
                                 closeAllSubmenus();
+                            } else {
+                                localStorage.setItem("sidebarStatus", "expanded");
                             }
                         }
                     });

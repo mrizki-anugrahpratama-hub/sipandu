@@ -34,6 +34,7 @@ use App\Livewire\Arsip\AktifCreate;
 use App\Livewire\Arsip\AktifEdit;
 use App\Livewire\Arsip\AktifShow;
 use App\Livewire\Arsip\AktifUploadFile;
+use App\Livewire\Arsip\AktifEditFile;
 
 // Arsip Inaktif
 use App\Livewire\Arsip\InaktifIndex;
@@ -120,9 +121,6 @@ Route::middleware(['auth'])->group(function () {
 
         // Manajemen Akun
         Route::get('/manajemen/akun', UserIndex::class)->name('manajemen.akun.index');
-
-        // Log Aktivitas
-        Route::get('/log-aktivitas', AktivitasIndex::class)->name('log.aktivitas');
     });
 
     // --- Sekretariat ---
@@ -173,6 +171,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}/edit', AktifEdit::class)->name('edit');
         Route::get('/{id}', AktifShow::class)->name('show');
         Route::get('/{id}/upload', AktifUploadFile::class)->name('file.create');
+        Route::get('file/{id}/edit', AktifEditFile::class)->name('file.edit');
     });
 
     // --- Arsip Inaktif ---
@@ -204,6 +203,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Recycle Bin
     Route::get('/recycle-bin', RecycleBinIndex::class)->name('recycle-bin.index');
+
+    // Log Aktivitas
+    Route::get('/log-aktivitas', AktivitasIndex::class)->name('log.aktivitas');
 });
 
 // =========================================================================

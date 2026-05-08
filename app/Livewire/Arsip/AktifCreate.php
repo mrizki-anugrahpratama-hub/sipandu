@@ -7,11 +7,13 @@ use App\Models\ArsipAktif;
 use App\Models\User;
 use App\Models\Pergub26;
 use App\Models\Pergub30;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
+
 
 #[Layout('layouts.app')]
 class AktifCreate extends Component
@@ -76,10 +78,12 @@ class AktifCreate extends Component
     public function mount()
     {
         $user = Auth::user();
+    
+        // [PERBAIKAN 1] Tentukan Slug Efektif: Prioritaskan Session untuk Sekretariat & Super Admin
         $effectiveSlug = $user->role;
         $currentBidangOnSession = Session::get('current_bidang');
 
-        if ($user->role === 'super_admin' && $currentBidangOnSession) {
+        if (in_array($user->role, ['super_admin', 'sekretariat']) && $currentBidangOnSession) {
             $effectiveSlug = $currentBidangOnSession;
         }
 
@@ -95,11 +99,10 @@ class AktifCreate extends Component
             'super_admin' => 'ADMINISTRATOR UTAMA',
         ];
 
-        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT TIDAK DIKENAL';
+        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT KERJA';
         $this->namaBidangYangDibuka = Str::title(strtolower($namaDariMap));
         $this->slugBidangYangDibuka = ($effectiveSlug === 'super_admin') ? null : $effectiveSlug;
-
-        // Set default tanggal dibuat hari ini
+    
         $this->tanggal_dibuat = now()->format('Y-m-d');
     }
 
@@ -110,7 +113,8 @@ class AktifCreate extends Component
         if ($value == 'pergub26') {
             // BARIS BARU: menggunakan nama kolom yang benar ('index')
             $this->klasifikasiList = Pergub26::orderBy('kode_klasifikasi', 'asc')
-                ->get(['id', 'kode_klasifikasi', 'index']);
+                ->select('id', 'kode_klasifikasi', 'index as nama_klasifikasi')
+                ->get();
         } elseif ($value == 'pergub30') {
             $this->klasifikasiList = Pergub30::orderBy('kode_klasifikasi', 'asc')
                 ->select('id', 'kode_klasifikasi', 'index as nama_klasifikasi')
@@ -204,20 +208,14 @@ class AktifCreate extends Component
         $user = Auth::user();
         $bidang = $user->role;
 
-        if ($user->role === 'super_admin') {
+        if (in_array($user->role, ['super_admin', 'sekretariat'])) {
             $bidang = Session::get('current_bidang', $user->role);
         }
-
+        
         try {
-            $finalTanggalDibuat = $this->tanggal_dibuat;
-            if (!empty($this->kurun_waktu) && preg_match('/^\d{4}$/', $this->kurun_waktu)) {
-                $tahunInput = (int) $this->kurun_waktu;
-                $tahunSekarang = (int) date('Y');
-                if ($tahunInput < $tahunSekarang) {
-                    // Jika kurun waktu tahun lalu, set tanggal ke 1 Jan tahun tersebut
-                    $finalTanggalDibuat = $this->kurun_waktu . '-01-01';
-                }
-            }
+            // Logika: Tanggal Berkas di DB adalah Tanggal Cipta + Masa Retensi Aktif
+            $tanggalCipta = Carbon::parse($this->tanggal_dibuat);
+            $tglExpiredAktif = $tanggalCipta->copy()->addYears((int)$this->masa_retensi_aktif);
 
             ArsipAktif::create([
                 'kode_klasifikasi' => $this->kode_klasifikasi,
@@ -229,13 +227,15 @@ class AktifCreate extends Component
                 'masa_retensi_inaktif' => $this->masa_retensi_inaktif,
                 'status_akhir' => $this->status_akhir,
                 'keterangan' => $this->keterangan,
-                'tanggal_dibuat' => $finalTanggalDibuat,
+                'tanggal_dibuat' => $this->tanggal_dibuat,
                 'user_id' => $user->id,
                 'bidang' => $bidang,
                 'index' => $this->index,
                 'klasifikasi_keamanan' => $this->klasifikasi_keamanan,
                 'klasifikasi_akses' => $this->klasifikasi_akses,
                 'tingkat_perkembangan' => $this->tingkat_perkembangan,
+                'tanggal_expired_aktif' => $tglExpiredAktif, // Tambahkan field ini di migrasi jika belum ada
+                'tanggal_masuk' => now(),
 
                 // Untuk sistem otomasi
                 'status' => 'Aktif',
@@ -243,7 +243,7 @@ class AktifCreate extends Component
             ]);
 
             session()->flash('success', 'Arsip aktif berhasil dibuat.');
-            return $this->redirect(route('arsip.aktif.index'), navigate: true);
+            return $this->redirect(route('arsip.aktif.index', ['filterBidang' => $this->slugBidangYangDibuka]), navigate: true);
         } catch (\Exception $e) {
             if (str_contains($e->getMessage(), 'arsip_unik_constraint') || str_contains($e->getMessage(), 'Duplicate entry')) {
                 session()->flash('error', 'Gagal: Arsip dengan Kode, Tahun, dan Nomor Berkas ini sudah ada.');

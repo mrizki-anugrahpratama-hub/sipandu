@@ -46,13 +46,17 @@ class VitalIndex extends Component
     public function mount()
     {
         $user = Auth::user();
-        
-        // 1. Tentukan slug/role efektif
+    
+        // 1. Tentukan slug dasar
         $effectiveSlug = $user->role; 
-        if ($user->role === 'super_admin') {
-            $currentBidangOnSession = Session::get('current_bidang');
-            if ($currentBidangOnSession) {
-                $effectiveSlug = $currentBidangOnSession;
+
+        // 2. Jika Super Admin atau Sekretariat, cek apakah mereka sedang memfilter bidang tertentu
+        if (in_array($user->role, ['super_admin', 'sekretariat'])) {
+            // Ambil dari filter URL atau dari Session "current_bidang"
+            $currentBidang = request('filterBidang') ?? Session::get('current_bidang');
+            
+            if ($currentBidang) {
+                $effectiveSlug = $currentBidang;
             }
         }
 
@@ -70,14 +74,11 @@ class VitalIndex extends Component
         ];
 
         // 3. Tetapkan properti
-        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT TIDAK DIKENAL';
+        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT KERJA';
         $this->namaBidangYangDibuka = Str::title(strtolower($namaDariMap));
         
-        if ($effectiveSlug === 'super_admin') {
-            $this->slugBidangYangDibuka = null;
-        } else {
-            $this->slugBidangYangDibuka = $effectiveSlug;
-        }
+        // Simpan slug untuk kebutuhan URL di Blade
+        $this->slugBidangYangDibuka = ($effectiveSlug === 'super_admin') ? null : $effectiveSlug;
     }
 
     // [MODIFIKASI] Mengganti updatingSearch menjadi hook 'updated' yang lebih umum
@@ -188,6 +189,8 @@ class VitalIndex extends Component
                     return;
                 }
             }
+
+            $arsip->load('files');
             
             RecycleBin::create([
                 'jenis_arsip' => 'vital',

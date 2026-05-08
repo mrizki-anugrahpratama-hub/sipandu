@@ -80,36 +80,22 @@
 {{-- [BAGIAN UPDATE HEADER] --}}
 <x-slot name="header">
     @php
-    // Ambil user saat ini
-    $user = Auth::user();
-    $namaBidangFinal = 'Nama Bidang'; // Default
-    $slugBidangFinal = null; // Default
-
-    if (isset($namaBidangYangDibuka) && isset($slugBidangYangDibuka)) {
-        $namaBidangFinal = $namaBidangYangDibuka;
-        $slugBidangFinal = $slugBidangYangDibuka;
-    }
-    elseif (isset($user->bidang)) {
-        $namaBidangFinal = $user->bidang->nama;
-        $slugBidangFinal = $user->bidang->slug;
-    } elseif (isset($user->unit_kerja)) {
-        $namaBidangFinal = $user->unit_kerja->nama;
-        $slugBidangFinal = $user->unit_kerja->slug;
-    }
-
-    // [PERBAIKAN] 
-    // 1. Gunakan variabel $slugBidangFinal (yang sudah diisi logika di atas)
-    // 2. Gunakan str_replace untuk mengubah '_' jadi '-' agar cocok dengan route web.php
-    $urlBidang = $slugBidangFinal ? route('dashboard.' . str_replace('_', '-', $slugBidangFinal)) : '#';
+        $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
+            
+        // PERBAIKAN: Tambahkan parameter filterBidang agar tetap terkunci di sub-bidang (misal: umpeg)
+        $urlArsipAktif = route('arsip.aktif.index', ['filterBidang' => $slugBidangYangDibuka]);
     @endphp
 
     <div class="welcome-title-group">
         <h1>Ubah Berkas Aktif</h1>
-        <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangFinal }}</a>
-        <i class="bi bi-chevron-right breadcrumb-separator"></i>
-        <a href="{{ route('arsip.aktif.index') }}" class="breadcrumb-item active">Berkas Aktif</a>
-        <i class="bi bi-chevron-right breadcrumb-separator"></i>
-        <span class="breadcrumb-item active">Ubah Data</span>
+        <div class="breadcrumbs">
+            {{-- Nama bidang diambil dari $namaBidangYangDibuka yang dideteksi dari arsipnya --}}
+            <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+            <i class="bi bi-chevron-right breadcrumb-separator"></i>
+            <a href="{{ $urlArsipAktif }}" class="breadcrumb-item active">Arsip Aktif</a>
+            <i class="bi bi-chevron-right breadcrumb-separator"></i>
+            <span class="breadcrumb-item active">Ubah Data</span>
+        </div>
     </div>
 </x-slot>
 {{-- [AKHIR BAGIAN UPDATE HEADER] --}}
@@ -180,7 +166,7 @@
                     <label for="klasifikasi_keamanan">Klasifikasi Keamanan</label>
                     <select id="klasifikasi_keamanan" wire:model="klasifikasi_keamanan" 
                             class="form-select-sm @error('klasifikasi_keamanan') error @enderror">
-                        <option value="">-</option>
+                        <option value="">-- Pilih --</option>
                         <option value="Terbuka">Terbuka</option>
                         <option value="Terbatas">Terbatas</option>
                         <option value="Rahasia">Rahasia</option>
@@ -193,7 +179,7 @@
                     <label for="klasifikasi_akses">Klasifikasi Akses</label>
                     <select id="klasifikasi_akses" wire:model="klasifikasi_akses" 
                             class="form-select-sm @error('klasifikasi_akses') error @enderror">
-                        <option value="">-</option>
+                        <option value="">-- Pilih --</option>
                         <option value="internal dan eksternal">Internal dan Eksternal</option>
                         <option value="Eselon II">Eselon II</option>
                         <option value="Eselon III">Eselon III</option>

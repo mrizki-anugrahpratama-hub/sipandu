@@ -66,22 +66,17 @@ class AktifIndex extends Component
     public function mount()
     {
         $user = Auth::user();
-        
+    
+        // 1. Tentukan slug dasar
         $effectiveSlug = $user->role; 
-        
-        if ($user->role === 'super_admin') {
-            // Priority: URL/QueryString Filter > Session
-            if (!empty($this->filterBidang)) {
-                $effectiveSlug = $this->filterBidang;
-                Session::put('current_bidang', $this->filterBidang);
-            } else {
-                $currentBidangOnSession = Session::get('current_bidang');
-                if ($currentBidangOnSession) {
-                    $effectiveSlug = $currentBidangOnSession;
-                    $this->filterBidang = $currentBidangOnSession; // Sinkronkan dari Session ke Livewire prop
-                } else {
-                    $effectiveSlug = 'super_admin'; // Fallback
-                }
+
+        // 2. Jika Super Admin atau Sekretariat, cek apakah mereka sedang memfilter bidang tertentu
+        if (in_array($user->role, ['super_admin', 'sekretariat'])) {
+            // Ambil dari filter URL atau dari Session "current_bidang"
+            $currentBidang = request('filterBidang') ?? Session::get('current_bidang');
+            
+            if ($currentBidang) {
+                $effectiveSlug = $currentBidang;
             }
         }
 
@@ -97,14 +92,11 @@ class AktifIndex extends Component
             'super_admin' => 'ADMINISTRATOR UTAMA',
         ];
 
-        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT TIDAK DIKENAL';
+        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT KERJA';
         $this->namaBidangYangDibuka = Str::title(strtolower($namaDariMap));
         
-        if ($effectiveSlug === 'super_admin') {
-            $this->slugBidangYangDibuka = null;
-        } else {
-            $this->slugBidangYangDibuka = $effectiveSlug;
-        }
+        // Simpan slug untuk kebutuhan URL di Blade
+        $this->slugBidangYangDibuka = ($effectiveSlug === 'super_admin') ? null : $effectiveSlug;
     }
 
     public function getBidangOptionsProperty()
@@ -428,6 +420,8 @@ class AktifIndex extends Component
                     return;
                 }
             }
+
+            $arsip->load('files');
             
             RecycleBin::create([
                 'jenis_arsip' => 'aktif',

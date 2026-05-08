@@ -1,47 +1,49 @@
 <div class="dashboard-container livewire-scope">
-
-    {{-- [HEADER] --}}
+    {{-- HEADER HALAMAN --}}
     <x-slot name="header">
         <div class="welcome-title-group">
-            <h1>{{ $pageTitle ?? 'Log Aktivitas' }}</h1>
+            {{-- Judul Utama --}}
+            <h1>{{ empty($filterDataBidang) && !$isFromDashboard ? 'Log Aktivitas Sistem' : ($pageTitle ?? 'Log Aktivitas') }}</h1>
             
-            {{-- BREADCRUMB --}}
-            @php
-                $user = Auth::user();
-                $backRoute = '#';
-                $backLabel = 'Home';
-
-                if ($user->role === 'super_admin') {
-                    if (!empty($filterBidang) && !in_array($filterBidang, ['sistem', 'super_admin'])) {
-                        $slug = str_replace('_', '-', $filterBidang);
-                        $backRoute = Route::has("dashboard.$slug") ? route("dashboard.$slug") : route('dashboard.super-admin');
-                        $backLabel = 'Bidang ' . \Illuminate\Support\Str::title(str_replace('_', ' ', $filterBidang));
-                    } else {
-                        $backRoute = route('dashboard.super-admin');
-                        $backLabel = 'Home';
+            {{-- LOGIKA BREADCRUMB DINAMIS --}}
+            @if($isFromDashboard)
+                @php
+                    $user = Auth::user();
+                    $role = $user->role;
+                    
+                    // 1. Tentukan Route Beranda Utama berdasarkan Role (Mencegah 403)
+                    $homeRoute = match($role) {
+                        'super_admin' => route('dashboard.super-admin'),
+                        'sekretariat' => route('dashboard.sekretariat'),
+                        default       => route('dashboard'), 
+                    };
+    
+                    $backRoute = $homeRoute;
+                    $backLabel = 'Beranda';
+    
+                    // 2. Jika melihat sub-bidang spesifik (misal: Keuangan), arahkan ke dashboard sub tersebut
+                    if (!empty($filterDataBidang) && !in_array($filterDataBidang, ['sistem', 'super_admin', 'sekretariat'])) {
+                        $slug = str_replace('_', '-', $filterDataBidang);
+                        $routeName = "dashboard.$slug";
+                        
+                        if (Route::has($routeName)) {
+                            $backRoute = route($routeName);
+                            $backLabel = 'Beranda ' . \Illuminate\Support\Str::title(str_replace(['_', '-'], ' ', $filterDataBidang));
+                        }
                     }
-                } elseif ($user->role === 'sekretariat') {
-                    // Logic breadcrumb khusus Sekretariat
-                    if (!empty($filterBidang)) {
-                        $slug = str_replace('_', '-', $filterBidang);
-                        $backRoute = Route::has("dashboard.$slug") ? route("dashboard.$slug") : route('dashboard');
-                        $backLabel = 'Sub Bagian';
-                    } else {
-                        $backRoute = route('dashboard');
-                        $backLabel = 'Dashboard';
-                    }
-                } else {
-                    $backRoute = route('dashboard');
-                    $backLabel = 'Dashboard';
-                }
-            @endphp
-
-            <a href="{{ $backRoute }}" class="breadcrumb-item active">
-                {{ $backLabel }}
-            </a>
-            
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Riwayat Unggahan Lengkap</span>
+                @endphp
+    
+                <div class="breadcrumb-container" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                    <a href="{{ $backRoute }}" class="breadcrumb-item" style="text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;" wire:navigate>
+                        {{ $backLabel }}
+                    </a>
+                    <i class="bi bi-chevron-right" style="font-size: 0.8rem; color: var(--text-muted);"></i>
+                    <span class="breadcrumb-item active" style="color: var(--text-primary); font-size: 0.9rem; font-weight: 600;">Riwayat Unggahan</span>
+                </div>
+            @else
+                {{-- JIKA DITEKAN DARI SIDEBAR MANAJEMEN LANGSUNG, TIDAK ADA BREADCRUMB --}}
+                <span style="font-size: 0.9rem; color: var(--text-secondary);">Riwayat aktivitas sistem secara keseluruhan</span>
+            @endif
         </div>
     </x-slot>
 
@@ -113,31 +115,34 @@
     @endpush
 
     <div x-data="{ 
-        fpMulai: null, fpSelesai: null,
-        tanggalMulaiVal: @entangle('tanggal_mulai').live, 
-        tanggalSelesaiVal: @entangle('tanggal_selesai').live,
+        fpMulai: null, 
+        fpSelesai: null,
         initFlatpickr() {
-            // Hancurkan instance lama jika ada untuk mencegah duplikasi
+            // Hancurkan instance lama untuk mencegah duplikasi
             if(this.fpMulai) this.fpMulai.destroy();
             if(this.fpSelesai) this.fpSelesai.destroy();
-
+    
+            // Inisialisasi Tanggal Mulai
             this.fpMulai = flatpickr(this.$refs.tanggalMulai, { 
                 dateFormat: 'Y-m-d', 
                 allowInput: true, 
-                defaultDate: this.tanggalMulaiVal, 
+                defaultDate: '{{ $tanggal_mulai }}', 
                 onChange: (selectedDates, dateStr) => { 
-                    this.tanggalMulaiVal = dateStr; 
+                    // Kirim langsung ke Livewire
+                    @this.set('tanggal_mulai', dateStr); 
                     if(this.fpSelesai) this.fpSelesai.set('minDate', dateStr); 
                 } 
             });
-
+    
+            // Inisialisasi Tanggal Selesai
             this.fpSelesai = flatpickr(this.$refs.tanggalSelesai, { 
                 dateFormat: 'Y-m-d', 
                 allowInput: true, 
-                defaultDate: this.tanggalSelesaiVal, 
-                minDate: this.tanggalMulaiVal, 
+                defaultDate: '{{ $tanggal_selesai }}', 
+                minDate: '{{ $tanggal_mulai }}', 
                 onChange: (selectedDates, dateStr) => { 
-                    this.tanggalSelesaiVal = dateStr; 
+                    // Kirim langsung ke Livewire
+                    @this.set('tanggal_selesai', dateStr);
                     if(this.fpMulai) this.fpMulai.set('maxDate', dateStr); 
                 } 
             });
@@ -182,11 +187,24 @@
                     </select>
                 </div>
 
+                {{-- [BARU] FILTER AKSI - HANYA UNTUK SUPER ADMIN --}}
+                @if(Auth::user()->role === 'super_admin')
+                <div>
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Filter Aksi</label>
+                    <select wire:model.live="filterAksi" class="form-select-sm">
+                        <option value="">Semua Aksi</option>
+                        <option value="Tambah">Tambah</option>
+                        <option value="Ubah">Ubah</option>
+                        <option value="Hapus">Hapus</option>
+                    </select>
+                </div>
+                @endif
+
                 @if(Auth::check() && (Auth::user()->role === 'super_admin' || (Auth::user()->role === 'sekretariat' && !$isLockedMode)))
                 <div>
-                    <label style="font-size: 0.8rem; color: var(--text-muted);">Unit Pengolah</label>
-                    <select wire:model.live="filterBidang" class="form-select-sm">
-                        <option value="">Semua Unit</option>
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Bidang Arsip (Data)</label>
+                    <select wire:model.live="filterDataBidang" class="form-select-sm">
+                        <option value="">Semua Bidang</option>
                         
                         @if(Auth::user()->role === 'super_admin')
                             <option value="umum_kepegawaian">Sub.Bagian Umum dan Kepegawaian</option>
@@ -205,6 +223,25 @@
                 </div>
                 @endif
 
+                {{-- FILTER UNIT PENGOLAH (PELAKU) --}}
+                @if(Auth::user()->role === 'super_admin')
+                <div>
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Penanggung Jawab</label>
+                    <select wire:model.live="filterBidang" class="form-select-sm">
+                        <option value="">Semua Unit</option>
+                        <option value="super_admin">Super Admin</option>
+                        <option value="sekretariat">Admin Sekretariat</option>
+                        <option value="umum_kepegawaian">Admin Sub.Bagian Umum dan Kepegawaian</option>
+                        <option value="keuangan">Admin Sub.Bagian Keuangan</option>
+                        <option value="penyusunan_program">Admin Sub.Bagian Penyusunan Program dan Anggaran</option>
+                        <option value="pemerintahan">Admin Bidang Pemerintahan</option>
+                        <option value="pembangunan_ekonomi">Admin Bidang Pembangunan Ekonomi</option>
+                        <option value="kemasyarakatan">Admin Bidang Kemasyarakatan</option>
+                        <option value="sarana_prasarana">Admin Bidang Sarana dan Prasarana</option>
+                    </select>
+                </div>
+                @endif
+            
             </div>
         </div>
 
@@ -215,10 +252,10 @@
                         <tr>
                             <th class="text-center" style="width: 50px;">No</th>
                             <th>Uraian</th>
+                            <th class="text-center">Bidang Arsip</th>
                             <th class="text-center">Aksi</th>
                             <th class="text-center">Jenis Arsip</th>
-                            <th class="text-center">Unit Pengolah</th>
-                            {{-- <th class="text-center">Dilakukan Oleh</th> --}}
+                            <th class="text-center">Penanggung Jawab</th>
                             <th class="text-center">Waktu Upload</th>
                         </tr>
                     </thead>
@@ -233,7 +270,7 @@
                             {{-- Header Grup Tanggal --}}
                             @if ($currentDate != $itemDate)
                                 <tr class="date-header-row">
-                                    <td colspan="6" style="background: var(--bg-active); font-weight: 700;">
+                                    <td colspan="7" style="background: var(--bg-active); font-weight: 700;">
                                         <i class="bi bi-calendar3"></i> {{ $item->created_at->locale('id')->isoFormat('dddd, D MMMM YYYY') }}
                                     </td>
                                 </tr>
@@ -247,6 +284,13 @@
                                 {{-- 2. Deskripsi (Berisi Uraian Arsip) --}}
                                 <td class="text-wrap" style="color: var(--text-primary);">
                                     {{ $item->deskripsi }}
+                                </td>
+
+                                {{-- Data di bidang apa --}}
+                                <td class="text-center">
+                                    <span style="font-weight: 700; color: var(--text-primary);">
+                                        {{ \Illuminate\Support\Str::title(str_replace('_', ' ', $item->data_bidang)) }}
+                                    </span>
                                 </td>
                             
                                 {{-- 3. Badge Aksi --}}

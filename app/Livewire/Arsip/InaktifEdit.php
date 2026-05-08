@@ -35,51 +35,47 @@ class InaktifEdit extends Component
     
     // [PERBAIKAN 3] Properti disesuaikan dengan Model & Migrasi
     public $status_akhir;
+    public $arsip;
 
     // [DIUBAH] mount() sekarang juga mengatur header
     public function mount($id)
     {
-        $arsip = ArsipInaktif::findOrFail($id);
-        $user = Auth::user();
-        $currentBidang = Session::get('current_bidang');
-        
-        // VALIDASI PERMISSION
-        if ($user->role !== 'super_admin') {
-            if ($arsip->bidang !== $user->role) {
-                abort(403, 'Anda tidak memiliki akses untuk mengedit arsip ini.');
-            }
-        } else {
-            if ($currentBidang && $arsip->bidang !== $currentBidang) {
-                abort(403, 'Anda tidak memiliki akses untuk mengedit arsip ini.');
-            }
+        $this->arsip = ArsipInaktif::findOrFail($id);
+        $user = auth()->user();
+
+        // Logika Otoritas (Sudah Benar)
+        $lingkupSekretariat = ['umum_kepegawaian', 'keuangan', 'penyusunan_program', 'sekretariat'];
+        $isSuperAdmin = ($user->role === 'super_admin');
+        $isPemilikArsip = ($user->role === $this->arsip->bidang);
+        $isSekretariatManager = ($user->role === 'sekretariat' && in_array($this->arsip->bidang, $lingkupSekretariat));
+
+        if (!$isSuperAdmin && !$isPemilikArsip && !$isSekretariatManager) {
+            abort(403, 'ANDA TIDAK MEMILIKI AKSES UNTUK MENGEDIT ARSIP INI.');
         }
 
         // Load data form
-        $this->arsipId = $arsip->id;
-        $this->nomor_box = $arsip->nomor_box;
-        $this->nomor_berkas = $arsip->nomor_berkas;
-        $this->kode_klasifikasi = $arsip->kode_klasifikasi;
-        $this->index = $arsip->index;
-        $this->uraian = $arsip->uraian;
+        $this->arsipId = $this->arsip->id;
+        $this->nomor_box = $this->arsip->nomor_box;
+        $this->nomor_berkas = $this->arsip->nomor_berkas;
+        $this->kode_klasifikasi = $this->arsip->kode_klasifikasi;
+        $this->index = $this->arsip->index;
+        $this->uraian = $this->arsip->uraian;
         
         // [PERBAIKAN 4] Load data dari kolom yang benar
-        $this->kurun_waktu = $arsip->kurun_waktu;
-        $this->jumlah = $arsip->jumlah;
+        $this->kurun_waktu = $this->arsip->kurun_waktu;
+        $this->jumlah = $this->arsip->jumlah;
         
-        $this->klasifikasi_keamanan = $arsip->klasifikasi_keamanan;
-        $this->klasifikasi_akses = $arsip->klasifikasi_akses;
-        $this->tingkat_perkembangan = $arsip->tingkat_perkembangan;
+        $this->klasifikasi_keamanan = $this->arsip->klasifikasi_keamanan;
+        $this->klasifikasi_akses = $this->arsip->klasifikasi_akses;
+        $this->tingkat_perkembangan = $this->arsip->tingkat_perkembangan;
         
         // [PERBAIKAN 5] Load data dari kolom yang benar
-        $this->status_akhir = $arsip->status_akhir;
+        $this->status_akhir = $this->arsip->status_akhir;
 
-        // [BARU] Logika untuk Header/Breadcrumb
-        $effectiveSlug = $user->role; 
-        if ($user->role === 'super_admin') {
-            if ($currentBidang) {
-                $effectiveSlug = $currentBidang;
-            }
-        }
+        // [PERBAIKAN BREADCRUMBS]
+        // Gunakan session atau bidang dari arsip itu sendiri agar tidak undefined
+        $effectiveSlug = $this->arsip->bidang;
+
         $roleMap = [
             'pemerintahan' => 'BIDANG PEMERINTAHAN',
             'pembangunan_ekonomi' => 'BIDANG PEMBANGUNAN EKONOMI',
@@ -91,14 +87,9 @@ class InaktifEdit extends Component
             'sekretariat' => 'SEKRETARIAT',
             'super_admin' => 'ADMINISTRATOR UTAMA',
         ];
-        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT TIDAK DIKENAL';
+        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT KERJA';
         $this->namaBidangYangDibuka = Str::title(strtolower($namaDariMap));
-        
-        if ($effectiveSlug === 'super_admin') {
-            $this->slugBidangYangDibuka = null;
-        } else {
-            $this->slugBidangYangDibuka = $effectiveSlug;
-        }
+        $this->slugBidangYangDibuka = $effectiveSlug;
     }
 
     // [PERBAIKAN 6] Rules disesuaikan dengan Model & Migrasi
@@ -142,7 +133,7 @@ class InaktifEdit extends Component
         ]);
 
         session()->flash('success', 'Arsip Inaktif berhasil diperbarui!');
-        return redirect()->route('arsip.inaktif.index');
+        return redirect()->route('arsip.inaktif.index', ['filterBidang' => $this->slugBidangYangDibuka]);
     }
 
     // [DIUBAH] render() sekarang mengirim data header

@@ -114,32 +114,60 @@ class Index extends Component
     // =========================================================================
     public function restoreSingle($id)
     {
-        $recycleBinItem = RecycleBin::findOrFail($id);
-
-        if (Auth::user()->role !== 'super_admin' && $recycleBinItem->user_id !== Auth::id()) {
-            session()->flash('error', 'Anda tidak memiliki akses untuk restore arsip ini.');
-            return;
-        }
-
         try {
-            $data = $recycleBinItem->data_arsip;
+            $item = RecycleBin::findOrFail($id);
+            $data = $item->data_arsip;
 
-            switch ($recycleBinItem->jenis_arsip) {
-                case 'aktif':
-                    ArsipAktif::create($data);
-                    break;
-                case 'inaktif':
-                    ArsipInaktif::create($data);
-                    break;
-                case 'vital':
-                    ArsipVital::create($data);
-                    break;
+            // 1. Tentukan Model Induk
+            $modelClass = match ($item->jenis_arsip) {
+                'aktif' => \App\Models\ArsipAktif::class,
+                'inaktif' => \App\Models\ArsipInaktif::class,
+                'vital' => \App\Models\ArsipVital::class,
+                default => null,
+            };
+
+            if (!$modelClass) return;
+
+            // 2. [FIX TANGGAL] Paksa format tanggal agar tidak mundur
+            if (isset($data['tanggal_dibuat'])) {
+                $data['tanggal_dibuat'] = \Carbon\Carbon::parse($data['tanggal_dibuat'])
+                    ->setTimezone(config('app.timezone'))
+                    ->format('Y-m-d');
             }
 
-            $recycleBinItem->delete();
-            session()->flash('success', 'Arsip berhasil direstore!');
+            // Pastikan juga tanggal di bagian file (jika ada) tidak mundur
+            if (isset($data['files'])) {
+                foreach ($data['files'] as $key => $file) {
+                    if (isset($file['tanggal_file'])) {
+                        $data['files'][$key]['tanggal_file'] = \Carbon\Carbon::parse($file['tanggal_file'])
+                            ->setTimezone(config('app.timezone'))
+                            ->format('Y-m-d');
+                    }
+                }
+            }
+
+            // 3. [FIX BERKAS] Pisahkan data file sebelum create arsip induk
+            $files = $data['files'] ?? [];
+            unset($data['files']); // Hapus dari array agar tidak error mass-assignment
+
+            // 4. Restore Arsip Induk
+            $newArsip = $modelClass::create($data);
+
+            // 5. Restore Relasi File (Jika ada)
+            foreach ($files as $fileData) {
+                // Sesuaikan ID induk yang baru (penting jika ID berubah)
+                $foreignKey = ($item->jenis_arsip === 'aktif') ? 'arsip_aktif_id' : 'arsip_inaktif_id';
+                $fileData[$foreignKey] = $newArsip->id;
+                
+                \App\Models\FileArsip::create($fileData);
+            }
+
+            $item->delete();
+            session()->flash('success', 'Arsip dan berkas berhasil dipulihkan!');
+
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal restore arsip: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("Restore Error: " . $e->getMessage());
+            session()->flash('error', 'Gagal restore: ' . $e->getMessage());
         }
     }
 

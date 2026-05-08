@@ -147,27 +147,21 @@
     {{-- HEADER BREADCRUMB --}}
     <x-slot name="header">
         @php
-            // Logic URL Dinamis: Jika slug ada (user biasa), ke dashboard bidang. Jika null (admin), ke dashboard utama.
-            $urlBidang = $this->slugBidangYangDibuka 
-                ? route('dashboard.' . str_replace('_', '-', $this->slugBidangYangDibuka)) 
-                : route('dashboard'); 
+            $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
+            
+            // PERBAIKAN: Tambahkan parameter filterBidang agar tetap terkunci di sub-bidang (misal: umpeg)
+            $urlArsipInaktif = route('arsip.inaktif.index', ['filterBidang' => $slugBidangYangDibuka]);
         @endphp
-
         <div class="welcome-title-group">
             <h1>Tambah Berkas Inaktif</h1>
-
-            {{-- 1. Nama Bidang (Dinamis dari Component) --}}
-            <a href="{{ $urlBidang }}" class="breadcrumb-item">{{ $this->namaBidangYangDibuka }}</a>
-            
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            
-            {{-- 2. Link Index Inaktif --}}
-            <a href="{{ route('arsip.inaktif.index') }}" class="breadcrumb-item">Arsip Inaktif</a>
-            
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            
-            {{-- 3. Halaman Saat Ini --}}
-            <span class="breadcrumb-item active">Tambah</span>
+            <div class="breadcrumbs">
+                {{-- Nama bidang diambil dari $namaBidangYangDibuka yang sudah dipetakan di mount() --}}
+                <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <a href="{{ $urlArsipInaktif }}" class="breadcrumb-item active">Arsip Inaktif</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <span class="breadcrumb-item active">Tambah</span>
+            </div>
         </div>
     </x-slot>
 

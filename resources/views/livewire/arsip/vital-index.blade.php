@@ -1,31 +1,22 @@
 <div>
     {{-- [HEADER/BREADCRUMB] --}}
+    {{-- [HEADER/BREADCRUMB] --}}
     <x-slot name="header">
         @php
-            $user = Auth::user();
-            $namaBidangFinal = 'Nama Bidang';
-            $slugBidangFinal = null;
-
-            if (isset($namaBidangYangDibuka) && isset($slugBidangYangDibuka)) {
-                $namaBidangFinal = $namaBidangYangDibuka;
-                $slugBidangFinal = $slugBidangYangDibuka;
-            } 
-            elseif (isset($user->bidang)) {
-                $namaBidangFinal = $user->bidang->nama;
-                $slugBidangFinal = $user->bidang->slug;
-            } elseif (isset($user->unit_kerja)) {
-                $namaBidangFinal = $user->unit_kerja->nama;
-                $slugBidangFinal = $user->unit_kerja->slug;
-            }
-
-            $urlBidang = $slugBidangFinal ? route('dashboard.' . str_replace('_', '-', $slugBidangFinal)) : '#';
+            $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
+            
+            // PERBAIKAN: Tambahkan parameter filterBidang agar tetap terkunci di sub-bidang (misal: umpeg)
+            $urlArsipVital = route('arsip.vital.index', ['filterBidang' => $slugBidangYangDibuka]);
         @endphp
-
+    
         <div class="welcome-title-group">
-            <h1>Daftar Arsip Vital</h1>
-            <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangFinal }}</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Arsip Vital</span>
+            <h1>Daftar Berkas Vital</h1>
+            <div class="breadcrumbs">
+                {{-- Nama bidang diambil langsung dari $namaBidangYangDibuka yang sudah diproses Controller --}}
+                <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <span class="breadcrumb-item active">Arsip Vital</span>
+            </div>
         </div>
     </x-slot>
 

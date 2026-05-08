@@ -37,8 +37,8 @@ return new class extends Migration
             $table->date('tanggal_file');
             $table->integer('jumlah')->default(1);
             $table->string('tingkat_perkembangan')->nullable();
-            $table->string('nama_file_asli');
-            $table->string('path_file');
+            $table->string('nama_file_asli')->nullable();
+            $table->string('path_file')->nullable();
             $table->string('tipe_file')->nullable();
             $table->unsignedBigInteger('ukuran_file')->nullable();
 

@@ -89,7 +89,7 @@ class MusnahIndex extends Component
     {
         $this->resetPage();
         $this->reset(['selectedArsip', 'selectAll', 'tanggal_mulai', 'tanggal_selesai', 'searchQuery', 'filterBidang']); // Dihapus filterAkses
-        $this->dispatch('clear-datepicker'); 
+        $this->dispatch('clear-flatpickr-musnah');
     }
     
     public function updatedSearchQuery()
@@ -101,6 +101,7 @@ class MusnahIndex extends Component
     public function updatingTanggalSelesai() { $this->resetPage(); }
     // public function updatingFilterAkses() { $this->resetPage(); } <-- Dihapus
     public function updatingFilterBidang() { $this->resetPage(); }
+    public function updatingSearchQuery() { $this->resetPage(); }
 
 
     public function updatedSelectAll($value)
@@ -120,7 +121,8 @@ class MusnahIndex extends Component
     public function resetFilters()
     {
         $this->reset(['searchQuery', 'tanggal_mulai', 'tanggal_selesai', 'filterBidang']); // Dihapus filterAkses
-        $this->dispatch('clear-datepicker');
+        $this->resetPage();
+        $this->dispatch('clear-flatpickr-musnah');
     }
     
     // --- Logika Query ---
@@ -284,16 +286,68 @@ class MusnahIndex extends Component
 
     public function render()
     {
-        $countPending = ArsipInaktif::where('status_pengolahan', 'penyusutan')->where('status_akhir', 'Musnah')->count();
-        $countSelesai = ArsipInaktif::where('status_pengolahan', 'musnah')->count();
-        
-        $bidangs = $this->getBidangsProperty(); // Ambil opsi bidang
+        $user = Auth::user();
+        $isCentralAdmin = in_array($user->role, ['super_admin', 'sekretariat']);
+
+        // --- 1. LOGIKA QUERY DASAR ---
+        // $query = ArsipInaktif::query();
+        $query = $this->getQuery(false); 
+
+        // Hitung total untuk tab (Tetap menggunakan RBAC)
+        $countPendingQuery = ArsipInaktif::where('status_pengolahan', 'penyusutan')->where('status_akhir', 'Musnah');
+        $countSelesaiQuery = ArsipInaktif::where('status_pengolahan', 'musnah');
+
+        // Filter Tab (Pending vs Selesai)
+        if ($this->activeTab === 'pending') {
+            $query->where('status_pengolahan', 'penyusutan')->where('status_akhir', 'Musnah');
+        } else {
+            $query->where('status_pengolahan', 'musnah');
+        }
+
+        // --- 2. LOGIKA RBAC (Hak Akses) ---
+        // Jika bukan Admin Pusat, kunci hanya untuk bidangnya sendiri
+        // if (!$isCentralAdmin) {
+        //     $query->where('bidang', $user->role);
+        // } 
+        if (!$isCentralAdmin) {
+            $countPendingQuery->where('bidang', $user->role);
+            $countSelesaiQuery->where('bidang', $user->role);
+        }
+        // Jika Admin Pusat DAN ada filter bidang yang dipilih
+        elseif ($this->filterBidang) {
+            $query->where('bidang', $this->filterBidang);
+        }
+
+        // --- 3. FILTER PENCARIAN & TANGGAL ---
+        if ($this->searchQuery) {
+            $query->where(function($q) {
+                $q->where('uraian', 'like', '%' . $this->searchQuery . '%')
+                ->orWhere('nomor_berkas', 'like', '%' . $this->searchQuery . '%')
+                ->orWhere('kode_klasifikasi', 'like', '%' . $this->searchQuery . '%');
+            });
+        }
+
+        if ($this->tanggal_mulai) {
+            $query->whereDate('created_at', '>=', $this->tanggal_mulai);
+        }
+        if ($this->tanggal_selesai) {
+            $query->whereDate('created_at', '<=', $this->tanggal_selesai);
+        }
+
+        // --- 4. HITUNG TOTAL UNTUK TAB (Dinamis sesuai Hak Akses) ---
+        $countPendingQuery = ArsipInaktif::where('status_pengolahan', 'penyusutan')->where('status_akhir', 'Musnah');
+        $countSelesaiQuery = ArsipInaktif::where('status_pengolahan', 'musnah');
+
+        if (!$isCentralAdmin) {
+            $countPendingQuery->where('bidang', $user->role);
+            $countSelesaiQuery->where('bidang', $user->role);
+        }
 
         return view('livewire.penyusutan.musnah-index', [
-            'arsips' => $this->getQuery(false)->paginate(10), 
-            'countPending' => $countPending,
-            'countSelesai' => $countSelesai,
-            'bidangs' => $bidangs, // <-- Kirim opsi bidang ke view
-        ])->title('Olah Arsip Musnah');
+            'arsips' => $query->latest()->paginate(10),
+            'countPending' => $countPendingQuery->count(),
+            'countSelesai' => $countSelesaiQuery->count(),
+            'bidangs' => $this->getBidangsProperty()
+        ]);
     }
 }

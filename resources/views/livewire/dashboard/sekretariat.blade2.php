@@ -329,3 +329,10 @@
                     <div>
                         <div class="stat-right-title">Arsip Vital</div>
                         <div class="stat-right-value">{{ $arsipVitalCount ?? 0 }}</div>
+                        </div>
+                    <div class="stat-right-icon" style="color: var(--color-yellow);"><i class="bi bi-archive"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

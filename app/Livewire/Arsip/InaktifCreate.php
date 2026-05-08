@@ -53,12 +53,10 @@ class InaktifCreate extends Component
     {
         $user = Auth::user();
 
-        $effectiveSlug = $user->role;
-        if ($user->role === 'super_admin') {
-            $currentBidangOnSession = Session::get('current_bidang');
-            if ($currentBidangOnSession) {
-                $effectiveSlug = $currentBidangOnSession;
-            }
+        // Deteksi konteks bidang (terutama untuk Sekretariat/Super Admin)
+        $currentOnSession = Session::get('current_bidang');
+        if (in_array($user->role, ['super_admin', 'sekretariat']) && $currentOnSession) {
+            $effectiveSlug = $currentOnSession;
         }
 
         $roleMap = [
@@ -73,19 +71,11 @@ class InaktifCreate extends Component
             'super_admin' => 'ADMINISTRATOR UTAMA',
         ];
 
-        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT TIDAK DIKENAL';
+        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT KERJA';
         $this->namaBidangYangDibuka = Str::title(strtolower($namaDariMap));
+        $this->slugBidangYangDibuka = ($effectiveSlug === 'super_admin') ? null : $effectiveSlug;
 
-        if ($effectiveSlug === 'super_admin') {
-            $this->slugBidangYangDibuka = null;
-        } else {
-            $this->slugBidangYangDibuka = $effectiveSlug;
-        }
-
-        // Set default tanggal hari ini agar UX lebih cepat
-        if (empty($this->tanggal_dibuat)) {
-            $this->tanggal_dibuat = now()->format('Y-m-d');
-        }
+        $this->tanggal_dibuat = now()->format('Y-m-d');
     }
 
     // === LOGIC AUTO FILL (ADAPTASI DARI AKTIF CREATE) ===
@@ -266,7 +256,7 @@ class InaktifCreate extends Component
             // --- AKHIR LOGIKA UPLOAD FILE ---
 
             session()->flash('success', 'Arsip Inaktif berhasil ditambahkan.');
-            return $this->redirect(route('arsip.inaktif.index'), navigate: true);
+            return $this->redirect(route('arsip.inaktif.index', ['filterBidang' => $this->slugBidangYangDibuka]), navigate: true);
 
         } catch (\Exception $e) {
             // Error handling jika ada duplikasi atau error database lainnya

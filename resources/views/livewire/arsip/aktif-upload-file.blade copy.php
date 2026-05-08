@@ -1,5 +1,5 @@
 <div>
-    {{-- 1. HEADER (Disamakan dengan Upload) --}}
+    {{-- 1. HEADER --}}
     <x-slot name="header">
         @php
             // [PERBAIKAN] Gunakan str_replace agar sesuai dengan route di web.php
@@ -16,144 +16,215 @@
         </div>
     </x-slot>
 
-    {{-- 2. CSS (Copy-Paste dari aktif-upload agar seragam) --}}
+    {{-- 2. CSS BARU UNTUK TAMPILAN ELEGAN --}}
     @push('styles')
     <style>
-        .detail-card { background-color: var(--bg-white); border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
+        .row { display: flex; flex-wrap: wrap; margin-left: -12px; margin-right: -12px; }
+        .col-lg-12 { width: 100%; padding-left: 12px; padding-right: 12px; flex-shrink: 0; margin-bottom: 24px; }
+        .detail-card { background-color: var(--bg-white); border-radius: var(--radius-lg); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); height: 100%; }
         body.dark-mode .detail-card { background-color: var(--bg-sidebar); }
-        .detail-body { padding: 24px; }
+        .detail-body { padding: 24px; font-size: 0.95rem; color: var(--text-primary); }
         .detail-body h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; }
-        
-        .form-upload-grid { display: grid; grid-template-columns: 1fr; gap: 32px; margin-top: 20px; }
-        @media (min-width: 992px) { .form-upload-grid { grid-template-columns: 2fr 1fr; } }
-
-        .form-column-header { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
-        
-        .file-upload-wrapper { border: 2px dashed var(--border-color); border-radius: var(--radius-lg); padding: 20px; text-align: center; background-color: var(--bg-main); position: relative; min-height: 250px; display: flex; align-items: center; justify-content: center; }
-        .file-input-native { opacity: 0; position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; z-index: 10; }
-        
-        /* Frame Preview PDF/Image */
-        .preview-frame { width: 100%; height: 200px; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; background: #fff; position: relative; }
-        .preview-frame embed, .preview-frame img { width: 100%; height: 100%; object-fit: cover; }
-        
+        .text-danger { color: #ff5c5c; font-size: 0.875rem; margin-top: 4px; display: block; }
+        .form-row { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 16px; }
+        .form-row:last-child { margin-bottom: 0; }
+        .form-group { flex: 1 1 100%; display: flex; flex-direction: column; }
+        .form-label { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+        .form-control, .form-control-file { width: 100%; padding: 10px 14px; font-size: 0.95rem; color: var(--text-primary); background-color: var(--bg-white); border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; }
+        body.dark-mode .form-control { background-color: var(--bg-sidebar); }
+        .form-control:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 2px var(--primary-blue-light); }
+        .form-control-file { padding: 8px; }
+        .form-control.is-invalid, .form-control-file.is-invalid { border-color: #ff5c5c; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; font-size: 0.95rem; font-weight: 600; border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; text-decoration: none; }
+        .btn-primary { background-color: var(--primary-blue); color: var(--bg-white); border-color: var(--primary-blue); }
+        .btn-primary:hover { background-color: #0056b3; border-color: #0056b3; }
+        .btn-secondary { background-color: var(--bg-active); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: var(--border-color); }
         .form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 24px;}
 
+        /* [CSS BARU UNTUK LAYOUT & UPLOAD] */
+        .form-upload-grid {
+            display: grid;
+            grid-template-columns: 1fr; /* 1 kolom di mobile */
+            gap: 32px;
+            margin-top: 20px;
+        }
+
+        /* 2 kolom di layar desktop */
+        @media (min-width: 992px) {
+            .form-upload-grid {
+                /* Kolom metadata 2x lebih lebar dari kolom upload */
+                grid-template-columns: 2fr 1fr; 
+            }
+        }
+
+        /* Judul sub-bagian form */
+        .form-column-header {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Teks helper di bawah input */
+        .form-group .form-helper {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* Area Drag & Drop File */
+        .file-upload-wrapper {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            text-align: center;
+            background-color: var(--bg-main);
+            transition: all 0.2s ease;
+            position: relative; /* Penting untuk input native */
+        }
+        
+        /* Sembunyikan input file bawaan */
+        .file-input-native {
+            opacity: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .file-upload-ui {
+            z-index: 5;
+            position: relative;
+            pointer-events: none; /* Biarkan klik tembus ke input native */
+        }
+        
+        .file-upload-ui i {
+            font-size: 3rem;
+            color: var(--primary-blue);
+            margin-bottom: 12px;
+        }
+
+        .file-upload-text {
+            font-size: 1rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .file-upload-text b {
+            font-weight: 600;
+        }
+
+        .file-upload-link {
+            color: var(--primary-blue);
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            pointer-events: all; /* Biarkan link ini bisa diklik */
+        }
+        .file-upload-link:hover {
+            text-decoration: underline;
+        }
+
+        .file-upload-wrapper small {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* State: Saat file diseret ke area */
+        .file-upload-wrapper.is-dragging {
+            background-color: var(--primary-blue-light);
+            border-color: var(--primary-blue);
+        }
+
+        /* State: Saat loading atau file terpilih */
+        .file-upload-state {
+            padding: 10px 0;
+        }
+        .file-upload-state i {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+        }
+        .file-upload-state p {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            word-break: break-all; /* Cegah nama file panjang merusak layout */
+        }
+        
+        /* State: Sukses (setelah file dipilih) */
+        .file-upload-state.success i {
+            color: #10B981; /* Hijau sukses */
+        }
+        .file-upload-state.success small {
+            font-size: 0.9rem;
+        }
+
         .form-upload-column {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .file-upload-wrapper {
-        border: 2px dashed var(--border-color);
-        border-radius: var(--radius-lg);
-        padding: 15px;
-        background-color: var(--bg-main);
-        position: relative;
-        min-height: 300px;
-    }
-
-    /* Area Preview yang Bisa di-Scroll */
-    .preview-frame {
-        width: 100%;
-        height: 500px; /* Kita perbesar ukurannya */
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        background: #fff;
-        overflow-y: auto; /* Memungkinkan scroll internal */
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    .preview-frame embed, .preview-frame img {
-        width: 100%;
-        min-height: 100%;
-        display: block;
-    }
-
-    /* Input File disembunyikan total, dipicu lewat tombol */
-    .file-input-hidden {
-        display: none;
-    }
-
-    .preview-actions {
-        display: flex;
-        justify-content: center;
-        margin-top: 15px;
-    }
-
-    /* Overlay Full Screen */
-    .fullscreen-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.9);
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    }
-
-    .fullscreen-content {
-        width: 90%;
-        height: 85%;
-        background: #fff;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .fullscreen-content embed, .fullscreen-content img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-    }
-
-    .close-fullscreen {
-        position: absolute;
-        top: 20px;
-        right: 30px;
-        color: #fff;
-        font-size: 2rem;
-        cursor: pointer;
-        z-index: 10000;
-    }
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
     </style>
     @endpush
+    
+    {{-- Notifikasi Livewire (Tidak berubah) --}}
+    @if (session()->has('error'))
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-x-circle"></i> {{ session('error') }}
+            </div>
+        </div>
+    </div>
+    @endif
 
+    {{-- 3. KONTEN HALAMAN (Layout 1 Kolom) --}}
     <div class="row">
         <div class="col-lg-12">
             <section class="card detail-card animated-card">
                 <div class="detail-body">
                     
                     <h3>Formulir Upload File untuk Berkas: "{{ $arsip->uraian }}"</h3>
-
+                    
                     <form wire:submit="save">
+                        
+                        {{-- [LAYOUT BARU] Menggunakan Grid 2 Kolom --}}
                         <div class="form-upload-grid">
                             
                             {{-- KOLOM KIRI: METADATA --}}
                             <div class="form-metadata-column">
                                 <h4 class="form-column-header">1. Detail Informasi File</h4>
-                                
+                            
+                                {{-- Uraian Informasi Arsip --}}
                                 <div class="form-group" style="margin-bottom: 16px;">
-                                    <label class="form-label">Uraian Informasi Arsip</label>
+                                    <label for="uraian" class="form-label">Uraian Informasi Arsip</label>
                                     <input type="text" id="uraian" class="form-control @error('uraian') is-invalid @enderror" 
                                            wire:model="uraian" placeholder="Contoh: Surat Undangan Rapat...">
                                     <small class="form-helper">Beri nama/deskripsi singkat untuk file ini.</small>
                                     @error('uraian') <span class="text-danger">{{ $message }}</span> @enderror
                                 </div>
-
-                                <div style="display: flex; gap: 20px; margin-bottom: 16px;">
-                                    <div style="flex: 1;">
-                                        <label class="form-label">Tanggal File</label>
-                                        <input type="date" class="form-control" wire:model="tanggal_file">
+                                
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="tanggal_file" class="form-label">Tanggal File</label>
+                                        <input type="date" id="tanggal_file" class="form-control @error('tanggal_file') is-invalid @enderror" 
+                                               wire:model="tanggal_file">
                                     </div>
-                                    <div style="flex: 1.5;">
+                                    
+                                    {{-- [PEMBARUAN] Jumlah & Satuan Fleksibel --}}
+                                    <div class="form-group" style="flex: 1.5;">
                                         <label class="form-label">Kuantitas Item</label>
                                         <div style="display: flex; gap: 8px;">
-                                            <input type="number" class="form-control" wire:model="jumlah" min="1" style="flex: 1;">
+                                            <input type="number" id="jumlah" class="form-control @error('jumlah') is-invalid @enderror" 
+                                                   wire:model="jumlah" min="1" style="flex: 1;" placeholder="Jml">
                                             <select wire:model="satuan" class="form-control" style="flex: 2;">
                                                 <option value="Lembar">Lembar</option>
                                                 <option value="Berkas">Berkas</option>
@@ -162,12 +233,14 @@
                                                 <option value="Sampul">Sampul</option>
                                             </select>
                                         </div>
+                                        @error('jumlah') <span class="text-danger">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
-
+                            
+                                {{-- Tingkat Perkembangan --}}
                                 <div class="form-group">
-                                    <label class="form-label">Tingkat Perkembangan</label>
-                                    <select class="form-control" wire:model="tingkat_perkembangan">
+                                    <label for="tingkat_perkembangan" class="form-label">Tingkat Perkembangan</label>
+                                    <select id="tingkat_perkembangan" class="form-control" wire:model="tingkat_perkembangan">
                                         <option value="Asli">Asli</option>
                                         <option value="Fotokopi">Fotokopi</option>
                                         <option value="Salinan">Salinan</option>
@@ -271,6 +344,7 @@
                             </div>
                         </div>
 
+
                         {{-- Tombol Aksi (Tidak berubah) --}}
                         <div class="form-actions">
                             <a href="{{ route('arsip.aktif.show', $arsip->id) }}" class="btn btn-secondary">
@@ -286,6 +360,7 @@
                             </button>
                         </div>
                     </form>
+                    
                 </div>
             </section>
         </div>

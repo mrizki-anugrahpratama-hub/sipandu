@@ -35,6 +35,24 @@ class PermanenIndex extends Component
     public $selectAll = false;
     public $confirmingPermanent = false; 
 
+    // Penanda Tab Aktif
+    public $activeTab = 'pending';
+
+    // Helper untuk daftar bidang (samakan dengan MusnahIndex)
+    public function getBidangsProperty()
+    {
+        return [
+            'umum_kepegawaian' => 'Sub.Bagian Umum dan Kepegawaian',
+            'keuangan' => 'Sub.Bagian Keuangan',
+            'penyusunan_program' => 'Sub.Bagian Penyusunan Program dan Laporan',
+            'pemerintahan' => 'Bidang Pemerintahan',
+            'pembangunan_ekonomi' => 'Bidang Pembangunan Ekonomi',
+            'kemasyarakatan' => 'Bidang Kemasyarakatan',
+            'sarana_prasarana' => 'Bidang Sarana dan Prasarana',
+            'sekretariat' => 'Sekretariat',
+        ];
+    }
+
     // --- Header Utility (for Excel/PDF) ---
     private function getHeaderData()
     {
@@ -212,16 +230,61 @@ class PermanenIndex extends Component
 
     public function render()
     {
-        $arsips = $this->getQuery()->paginate(10);
-        $totalSiapPermanen = $this->getQuery()->count();
-        
-        // Assume you have a list of fields for the filter
-        $bidangs = ['pemerintahan' => 'Pemerintahan', 'keuangan' => 'Keuangan']; 
+        $user = Auth::user();
+        $isCentralAdmin = in_array($user->role, ['super_admin', 'sekretariat']);
+
+        // --- 1. LOGIKA QUERY DASAR UNTUK TABEL ---
+        $query = ArsipInaktif::query();
+
+        if ($this->activeTab === 'pending') {
+            // Gunakan 'Permanen' (P Besar) agar sesuai dengan dashboard/model
+            $query->where('status_pengolahan', 'penyusutan')->where('status_akhir', 'Permanen');
+        } else {
+            $query->where('status_pengolahan', 'permanen');
+        }
+
+        // --- 2. LOGIKA FILTER BIDANG (Untuk Tabel) ---
+        if (!$isCentralAdmin) {
+            $query->where('bidang', $user->role);
+        } 
+        elseif ($this->filterBidang) {
+            $query->where('bidang', $this->filterBidang);
+        }
+
+        // --- 3. FILTER PENCARIAN & TANGGAL (Tetap Sama) ---
+        if ($this->searchQuery) {
+            $query->where(function($q) {
+                $q->where('uraian', 'like', '%' . $this->searchQuery . '%')
+                ->orWhere('nomor_berkas', 'like', '%' . $this->searchQuery . '%')
+                ->orWhere('kode_klasifikasi', 'like', '%' . $this->searchQuery . '%');
+            });
+        }
+
+        if ($this->tanggal_mulai) {
+            $query->whereDate('created_at', '>=', $this->tanggal_mulai);
+        }
+        if ($this->tanggal_selesai) {
+            $query->whereDate('created_at', '<=', $this->tanggal_selesai);
+        }
+
+        // --- 4. HITUNG TOTAL UNTUK TAB (Dibuat Sinkron dengan Filter) ---
+        $countPendingQuery = ArsipInaktif::where('status_pengolahan', 'penyusutan')->where('status_akhir', 'Permanen');
+        $countSelesaiQuery = ArsipInaktif::where('status_pengolahan', 'permanen');
+
+        // [PENTING] Filter Bidang juga harus diterapkan ke angka di TAB agar sinkron
+        if (!$isCentralAdmin) {
+            $countPendingQuery->where('bidang', $user->role);
+            $countSelesaiQuery->where('bidang', $user->role);
+        } elseif ($this->filterBidang) {
+            $countPendingQuery->where('bidang', $this->filterBidang);
+            $countSelesaiQuery->where('bidang', $this->filterBidang);
+        }
 
         return view('livewire.penyusutan.permanen-index', [
-            'arsips' => $arsips,
-            'totalSiapPermanen' => $totalSiapPermanen,
-            'bidangs' => $bidangs
-        ])->title('Olah Arsip Permanen');
+            'arsips' => $query->latest()->paginate(10),
+            'pendingPermanen' => $countPendingQuery->count(), // Variabel disamakan dengan dashboard
+            'totalPermanen' => $countSelesaiQuery->count(),   // Variabel disamakan dengan dashboard
+            'bidangs' => $this->getBidangsProperty()
+        ]);
     }
 }

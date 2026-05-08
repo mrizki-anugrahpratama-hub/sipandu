@@ -179,19 +179,24 @@
         });
     }
 }" x-init="initDatePicker()">
+
     <x-slot name="header">
         @php
-        // [PERBAIKAN] Tambahkan str_replace untuk mengubah '_' menjadi '-' agar sesuai dengan nama route
-        $urlBidang = $this->slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $this->slugBidangYangDibuka)) : '#';
+            $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
+            
+            // PERBAIKAN: Tambahkan parameter filterBidang agar tetap terkunci di sub-bidang (misal: umpeg)
+            $urlArsipAktif = route('arsip.aktif.index', ['filterBidang' => $slugBidangYangDibuka]);
         @endphp
         <div class="welcome-title-group">
             <h1>Tambah Berkas Aktif</h1>
-
-            <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $this->namaBidangYangDibuka }}</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <a href="{{ route('arsip.aktif.index') }}" class="breadcrumb-item active">Arsip Aktif</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Tambah</span>
+            <div class="breadcrumbs">
+                {{-- Nama bidang diambil dari $namaBidangYangDibuka yang sudah dipetakan di mount() --}}
+                <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <a href="{{ $urlArsipAktif }}" class="breadcrumb-item active">Arsip Aktif</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <span class="breadcrumb-item active">Tambah</span>
+            </div>
         </div>
     </x-slot>
 
@@ -227,7 +232,10 @@
                         autocomplete="off">
                     <datalist id="klasifikasi-data-list">
                         @foreach($klasifikasiList as $klasifikasi)
-                        <option value="{{ $klasifikasi->kode_klasifikasi }}">{{ $klasifikasi->nama_klasifikasi }}</option>
+                            {{-- Di sini kita gabungkan kode dan namanya agar sama dengan Arsip Inaktif/Vital --}}
+                            <option value="{{ $klasifikasi->kode_klasifikasi }}">
+                                {{ $klasifikasi->kode_klasifikasi }} - {{ $klasifikasi->nama_klasifikasi }}
+                            </option>
                         @endforeach
                     </datalist>
                     @error('kode_klasifikasi') <span class="text-danger">{{ $message }}</span> @enderror

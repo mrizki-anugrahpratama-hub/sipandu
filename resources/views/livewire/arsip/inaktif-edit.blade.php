@@ -52,20 +52,25 @@
     {{-- [DIUBAH] BREADCRUMB HEADER --}}
     <x-slot name="header">
         @php
-            $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . $slugBidangYangDibuka) : '#';
+            $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
+                
+            // PERBAIKAN: Tambahkan parameter filterBidang agar tetap terkunci di sub-bidang (misal: umpeg)
+            $urlArsipInaktif = route('arsip.inaktif.index', ['filterBidang' => $slugBidangYangDibuka]);
         @endphp
+
         <div class="welcome-title-group">
-            <h1>Edit Arsip Inaktif</h1>
-            
-            {{-- Breadcrumb Dinamis --}}
-            <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <a href="{{ route('arsip.inaktif.index') }}" class="breadcrumb-item active">Arsip Inaktif</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Edit</span>
+            <h1>Ubah Berkas Inaktif</h1>
+            <div class="breadcrumbs">
+                {{-- Nama bidang diambil dari $namaBidangYangDibuka yang dideteksi dari arsipnya --}}
+                <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <a href="{{ $urlArsipInaktif }}" class="breadcrumb-item active">Arsip Inaktif</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <span class="breadcrumb-item active">Ubah Data</span>
+            </div>
         </div>
     </x-slot>
-    {{-- [AKHIR PERUBAHAN] --}}
+        {{-- [AKHIR PERUBAHAN] --}}
 
     <section class="card animated-card">
         <h2 class="section-title" style="margin-bottom: 24px;">Edit Arsip Inaktif</h2>
@@ -129,10 +134,11 @@
                     <label for="klasifikasi_keamanan">Klasifikasi Keamanan <span style="color: #ff5c5c;">*</span></label>
                     <select id="klasifikasi_keamanan" wire:model="klasifikasi_keamanan" 
                             class="form-select-sm @error('klasifikasi_keamanan') error @enderror">
-                        <option value="Biasa">Biasa</option>
-                        <option value="Terbatas">Terbatas</option>
-                        <option value="Rahasia">Rahasia</option>
-                        <option value="Sangat Rahasia">Sangat Rahasia</option>
+                            <option value="">-- Pilih --</option>
+                            <option value="Biasa">Biasa</option>
+                            <option value="Terbatas">Terbatas</option>
+                            <option value="Rahasia">Rahasia</option>
+                            <option value="Sangat Rahasia">Sangat Rahasia</option>
                     </select>
                     @error('klasifikasi_keamanan') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
@@ -141,9 +147,12 @@
                     <label for="klasifikasi_akses">Klasifikasi Akses <span style="color: #ff5c5c;">*</span></label>
                     <select id="klasifikasi_akses" wire:model="klasifikasi_akses" 
                             class="form-select-sm @error('klasifikasi_akses') error @enderror">
-                        <option value="Terbuka">Terbuka</option>
-                        <option value="Terbatas">Terbatas</option>
-                        <option value="Rahasia">Rahasia</option>
+                            <option value="">-- Pilih --</option>
+                            <option value="internal dan eksternal">Internal dan Eksternal</option>
+                            <option value="Eselon II">Eselon II</option>
+                            <option value="Eselon III">Eselon III</option>
+                            <option value="Eselon IV">Eselon IV</option>
+                        </select>
                     </select>
                     @error('klasifikasi_akses') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>

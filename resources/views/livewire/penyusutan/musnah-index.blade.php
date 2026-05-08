@@ -21,9 +21,21 @@
     </x-slot>
 
     @push('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css">
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
+        /* CSS Konsisten dengan Log Aktivitas */
+        .flatpickr-calendar { z-index: 9999 !important; }
+        body.dark-mode .flatpickr-calendar { background: #1f2937 !important; border: 1px solid #374151 !important; }
+        body.dark-mode .flatpickr-day { color: #e5e7eb !important; }
+        
+        .filter-container-body { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 16px; 
+            padding: 20px; 
+        }
+        .form-label-sm { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 4px; display: block; }
+    
         /* 🎨 1. VARIABEL & WARNA UTAMA */
         .livewire-scope {
             /* Light Mode Defaults */
@@ -162,33 +174,41 @@
     
     {{-- 2. ALPINE JS WRAPPER --}}
     <div x-data="{ 
-        isFilterSectionOpen: false, 
-        litePicker: null,
-        initLitePicker() {
-            if (this.$refs.tanggalRange && typeof Litepicker !== 'undefined' && !this.litePicker) {
-                this.litePicker = new Litepicker({
-                    element: this.$refs.tanggalRange,
-                    singleMode: false, numberOfMonths: 2, numberOfColumns: 2,
-                    format: 'YYYY-MM-DD', separator: ' - ',
-                    dropdowns: { minYear: 2000, maxYear: new Date().getFullYear(), months: true, years: true },
-                    setup: (picker) => {
-                        picker.on('selected', (date1, date2) => {
-                            if (date1 && date2) { $wire.set('tanggal_mulai', date1.format('YYYY-MM-DD')); $wire.set('tanggal_selesai', date2.format('YYYY-MM-DD')); }
-                        });
-                        picker.on('clear', () => { $wire.set('tanggal_mulai', ''); $wire.set('tanggal_selesai', ''); });
-                        if ($wire.tanggal_mulai && $wire.tanggal_selesai) { picker.setRange($wire.tanggal_mulai, $wire.tanggal_selesai); }
-                    }
-                });
-            }
+        isFilterSectionOpen: false, {{-- Tambahkan ini --}}
+        toggleFilter() { this.isFilterSectionOpen = !this.isFilterSectionOpen }, {{-- Tambahkan ini --}}
+        fpMulai: null, 
+        fpSelesai: null,
+        initFlatpickr() {
+            if(this.fpMulai) this.fpMulai.destroy();
+            if(this.fpSelesai) this.fpSelesai.destroy();
+
+            this.fpMulai = flatpickr(this.$refs.tanggalMulai, { 
+                dateFormat: 'Y-m-d', 
+                defaultDate: '{{ $tanggal_mulai }}', 
+                onChange: (selectedDates, dateStr) => { 
+                    $wire.set('tanggal_mulai', dateStr); 
+                    if(this.fpSelesai) this.fpSelesai.set('minDate', dateStr); 
+                } 
+            });
+
+            this.fpSelesai = flatpickr(this.$refs.tanggalSelesai, { 
+                dateFormat: 'Y-m-d', 
+                defaultDate: '{{ $tanggal_selesai }}', 
+                minDate: '{{ $tanggal_mulai }}', 
+                onChange: (selectedDates, dateStr) => { 
+                    $wire.set('tanggal_selesai', dateStr);
+                    if(this.fpMulai) this.fpMulai.set('maxDate', dateStr); 
+                } 
+            });
         },
-        toggleFilter() {
-            this.isFilterSectionOpen = !this.isFilterSectionOpen;
-            if (this.isFilterSectionOpen) { this.$nextTick(() => { this.initLitePicker(); }); }
+        resetFlatpickr() { 
+            if (this.fpMulai) this.fpMulai.clear(); 
+            if (this.fpSelesai) this.fpSelesai.clear(); 
         }
     }" 
-    x-init="initLitePicker()"
-    @clear-datepicker.window="if(litePicker) { litePicker.clear(); }"
-    class="livewire-scope"> 
+    x-init="initFlatpickr()"
+    @clear-flatpickr-musnah.window="resetFlatpickr()"
+    class="livewire-scope">
     
         {{-- NOTIFIKASI --}}
         @if (session()->has('success'))
@@ -236,11 +256,11 @@
                 </div>
                 <div class="filter-container-body">
                     
-                    {{-- 1. Filter Bidang (LOGIKA: Hanya muncul untuk Super Admin) --}}
+                    {{-- 1. Filter Bidang --}}
                     @if(auth()->user()->role === 'super_admin') 
                         <div>
-                            <label for="filterBidang">Filter Berdasarkan Bidang</label>
-                            <select id="filterBidang" wire:model.live="filterBidang" class="form-select-sm">
+                            <label class="form-label-sm">Filter Bidang</label>
+                            <select wire:model.live="filterBidang" class="form-select-sm">
                                 <option value="">Semua Bidang</option>
                                 @foreach ($bidangs as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
@@ -248,15 +268,20 @@
                             </select>
                         </div>
                     @endif
-                    
-                    {{-- 2. Filter Tanggal --}}
-                    <div style="grid-column: span 2;">
-                        <label for="tanggalRange">Rentang Tanggal {{ $activeTab === 'selesai' ? 'Eksekusi Musnah' : 'Retensi Berakhir' }}</label>
-                        <input id="tanggalRange" x-ref="tanggalRange" type="text" class="form-input-sm" placeholder="Pilih rentang tanggal (Mulai - Selesai)" autocomplete="off"> 
+                                        
+                    {{-- 2. Filter Tanggal (Dua Kolom Flatpickr) --}}
+                    <div wire:ignore>
+                        <label class="form-label-sm">Mulai Retensi</label>
+                        <input x-ref="tanggalMulai" type="text" class="form-input-sm" placeholder="Pilih tanggal..." autocomplete="off">
+                    </div>
+                    <div wire:ignore>
+                        <label class="form-label-sm">Sampai Retensi</label>
+                        <input x-ref="tanggalSelesai" type="text" class="form-input-sm" placeholder="Pilih tanggal..." autocomplete="off">
                     </div>
                 </div>
                 <div class="filter-container-footer">
-                    <button wire:click="resetFilters" class="action-button">
+                    {{-- Tambahkan @click="resetFlatpickr()" untuk respon instan di UI --}}
+                    <button wire:click="resetFilters" @click="resetFlatpickr()" class="action-button">
                         <i class="bi bi-arrow-counterclockwise"></i> Reset Filter
                     </button>
                 </div>
@@ -278,11 +303,11 @@
                             {{-- NOMOR --}}
                             <th style="white-space: nowrap;" colspan="2">Nomor</th>
                             
-                            <th style="white-space: nowrap; min-width: 120px; vertical-align: middle;" rowspan="2">
-                                BIDANG PENGOLAH
+                            <th style="white-space: nowrap; width: 120px; vertical-align: middle;" rowspan="2">
+                                UNIT PENGOLAH
                             </th>
                             
-                            <th style="white-space: nowrap; min-width: 150px; vertical-align: middle;" rowspan="2">
+                            <th style="white-space: nowrap; width: 150px; vertical-align: middle;" rowspan="2">
                                 KODE KLASIFIKASI<br>& INDEX
                             </th>
                             
@@ -355,7 +380,7 @@
                             
                             {{-- AKSI --}}
                             <td class="action-buttons text-center" onclick="event.stopPropagation();">
-                                <a href="{{ route('arsip.inaktif.show', $arsip->id) }}" class="btn-icon" title="Lihat Detail">
+                                <a href="{{ route('arsip.inaktif.show', $arsip->id) }}?from=musnah" class="btn-action btn-detail" title="Lihat Detail">
                                     <i class="bi bi-eye" style="color: var(--primary-blue);"></i>
                                 </a>
                             </td>
@@ -391,6 +416,7 @@
     </div>
 
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script> --}}
     @endpush
 </div>

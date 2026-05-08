@@ -42,24 +42,34 @@ class InaktifShow extends Component
      */
     public function mount($id)
     {
-        $this->arsipId = $id;
+        // Cari arsip dan muat relasi 'files'
+        $this->arsip = ArsipInaktif::with('files')->findOrFail($id);
 
-        $this->from = $this->from ?? request()->query('from');
-        
-        try {
-            // 1. Ambil Arsip berdasarkan ID dan eager load relasi files
-            $this->arsip = ArsipInaktif::with(['files']) 
-                                       ->findOrFail($id); 
-            
-            // 2. Load info bidang
-            $this->muatInfoBidang(); 
+        // Logika untuk Header/Breadcrumb (dari kode Anda)
+        $namaBidangFinal = 'Nama Bidang'; // Default
+        $slugBidangFinal = null;
 
-        } catch (ModelNotFoundException $e) {
-            // Jika ID tidak ditemukan di database
-            session()->flash('error', 'Data arsip tidak ditemukan.');
-            // Gunakan redirect() dengan navigate: true untuk Livewire 3
-            return $this->redirect(route('arsip.inaktif.index'), navigate: true); 
+        if (isset($this->arsip->bidang)) {
+            // Kita gunakan data dari arsip yang sedang dibuka
+            $roleMap = [
+                'pemerintahan' => 'BIDANG PEMERINTAHAN',
+                'pembangunan_ekonomi' => 'BIDANG PEMBANGUNAN EKONOMI',
+                'kemasyarakatan' => 'BIDANG KEMASYARAKATAN',
+                'sarana_prasarana' => 'BIDANG SARANA & PRASARANA',
+                'umum_kepegawaian' => 'SUB BAGIAN UMUM & KEPEGAWAIAN',
+                'keuangan' => 'SUB BAGIAN KEUANGAN',
+                'penyusunan_program' => 'SUB BAGIAN PENYUSUNAN PROGRAM',
+                'sekretariat' => 'SEKRETARIAT',
+                'super_admin' => 'ADMINISTRATOR UTAMA',
+            ];
+            $namaDariMap = $roleMap[$this->arsip->bidang] ?? 'UNIT TIDAK DIKENAL';
+            $namaBidangFinal = Str::title(strtolower($namaDariMap));
+            $slugBidangFinal = $this->arsip->bidang;
         }
+        
+        // Simpan ke properti publik
+        $this->namaBidangYangDibuka = $namaBidangFinal;
+        $this->slugBidangYangDibuka = $slugBidangFinal;
     }
 
     /**

@@ -291,7 +291,7 @@
     $currentBidangTitle = 'Sub. Umum & Kepegawaian'; /* <-- DIUBAH MENJADI UMUM & KEPEGAWAIAN */
     $userRole = Auth::user()->role ?? 'super_admin'; 
 
-    if(isset(Auth::user()->role) && Auth::user()->role !== 'super_admin') {
+    if(isset(Auth::user()->role) && Auth::user()->role !== 'super_admin' && Auth::user()->role !== 'sekretariat') {
         $currentBidangTitle = ucwords(str_replace('_', ' ', Auth::user()->role));
     }
 

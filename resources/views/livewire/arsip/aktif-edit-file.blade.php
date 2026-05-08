@@ -2,17 +2,16 @@
     {{-- 1. HEADER (Disamakan dengan Upload) --}}
     <x-slot name="header">
         @php
-            // [PERBAIKAN] Gunakan str_replace agar sesuai dengan route di web.php
-            $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
+            $urlBidang = $arsip->bidang ? route('dashboard.' . str_replace('_', '-', $arsip->bidang)) : '#';
             $urlDetailArsip = route('arsip.aktif.show', $arsip->id); 
         @endphp
         <div class="welcome-title-group">
-            <h1>Upload Isi Berkas</h1>
-            <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+            <h1>Edit Item Berkas</h1>
+            <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka ?? 'Bidang' }}</a>
             <i class="bi bi-chevron-right breadcrumb-separator"></i>
             <a href="{{ $urlDetailArsip }}" class="breadcrumb-item active">Detail Arsip</a>
             <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Upload Baru</span>
+            <span class="breadcrumb-item active">Edit Data</span>
         </div>
     </x-slot>
 
@@ -127,8 +126,7 @@
         <div class="col-lg-12">
             <section class="card detail-card animated-card">
                 <div class="detail-body">
-                    
-                    <h3>Formulir Upload File untuk Berkas: "{{ $arsip->uraian }}"</h3>
+                    <h3>Ubah Data Item: "{{ $fileArsip->uraian }}"</h3>
 
                     <form wire:submit="save">
                         <div class="form-upload-grid">
@@ -179,8 +177,8 @@
                             <div class="form-upload-column" x-data="{ 
                                 isNewFile: false, 
                                 showFull: false,
-                                previewUrl: null,
-                                fileType: null,
+                                previewUrl: '{{ $fileArsip->path_file ? Storage::url($fileArsip->path_file) : '' }}',
+                                fileType: '{{ $fileArsip->tipe_file }}',
                                 
                                 handleFileChange(event) {
                                     const file = event.target.files[0];
@@ -196,9 +194,9 @@
                                 <div class="file-upload-wrapper">
                                     {{-- Input File Tersembunyi --}}
                                     <input type="file" 
-                                        id="file_arsip" 
+                                        id="file_baru" 
                                         x-ref="fileInput" 
-                                        wire:model="file_arsip" 
+                                        wire:model="file_baru" 
                                         class="file-input-hidden" 
                                         @change="handleFileChange">
                                     
@@ -271,18 +269,11 @@
                             </div>
                         </div>
 
-                        {{-- Tombol Aksi (Tidak berubah) --}}
                         <div class="form-actions">
-                            <a href="{{ route('arsip.aktif.show', $arsip->id) }}" class="btn btn-secondary">
-                                Batal
-                            </a>
-                            <button type="submit" class="btn btn-primary" wire:loading.attr="disabled" wire:target="save, file_arsip">
-                                <span wire:loading wire:target="save, file_arsip">
-                                    <i class="bi bi-arrow-repeat"></i> Menyimpan...
-                                </span>
-                                <span wire:loading.remove wire:target="save, file_arsip">
-                                    <i class="bi bi-upload"></i> Upload File
-                                </span>
+                            <a href="{{ route('arsip.aktif.show', $arsip->id) }}" class="btn btn-secondary">Batal</a>
+                            <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
+                                <span wire:loading.remove><i class="bi bi-save"></i> Simpan Perubahan</span>
+                                <span wire:loading><i class="bi bi-arrow-repeat spin"></i> Memproses...</span>
                             </button>
                         </div>
                     </form>

@@ -1,59 +1,57 @@
 <div>
-    {{-- 1. HEADER --}}
+    {{-- 1. HEADER DENGAN LOGIKA CONTEXTUAL BREADCRUMBS --}}
     <x-slot name="header">
         @php
-        $arsip = $arsip ?? $arsipInaktif ?? null;
-        $isPermanen = ($arsip && $arsip->status_akhir == 'Permanen');
-        $isMusnah = ($arsip && $arsip->status_akhir == 'Musnah');
+            // Pastikan variabel arsip tersedia
+            $arsip = $arsip ?? $arsipInaktif ?? null;
+            
+            // Ambil parameter 'from' dari URL untuk menentukan jalur navigasi
+            $from = $from ?? request()->query('from');
 
-        // LOGIKA PERBAIKAN: Cek asal akses terlebih dahulu
-        $from = $from ?? request()->query('from');
-
-        if ($from === 'inaktif') {
-            // Jalur: Nama Bidang > Arsip Inaktif > Detail
-            $labelLevel1 = $namaBidangYangDibuka ?? 'Dashboard';
-            $slugRaw = $slugBidangYangDibuka ?? 'dashboard';
-            $slugBidangSafe = str_replace('_', '-', $slugRaw);
-            $urlLevel1 = route('dashboard.' . $slugBidangSafe);
-        
-            $labelLevel2 = 'Arsip Inaktif';
-            $urlLevel2 = route('arsip.inaktif.index');
-        } 
-        elseif ($isPermanen) {
-            $labelLevel1 = 'Penyusutan';
-            $urlLevel1 = route('penyusutan.index');
-            $labelLevel2 = 'Arsip Permanen';
-            $urlLevel2 = url('/penyusutan/permanen');
-        } 
-        elseif ($isMusnah) {
-            $labelLevel1 = 'Penyusutan';
-            $urlLevel1 = route('penyusutan.index');
-            $labelLevel2 = 'Arsip Musnah';
-            $urlLevel2 = url('/penyusutan/musnah');
-        } else {
-            // Default Fallback
-            $labelLevel1 = $namaBidangYangDibuka ?? 'Dashboard';
-            $urlLevel1 = '#';
-            $labelLevel2 = 'Arsip Inaktif';
-            $urlLevel2 = route('arsip.inaktif.index');
-        }
+            // LOGIKA PENENTUAN JALUR (Contextual Navigation)
+            if ($from === 'musnah') {
+                // Jalur: Penyusutan > Arsip Musnah > Detail
+                $labelLevel1 = 'Penyusutan';
+                $urlLevel1 = route('penyusutan.index');
+                $labelLevel2 = 'Arsip Musnah';
+                $urlLevel2 = route('penyusutan.musnah.index');
+            } 
+            elseif ($from === 'permanen') {
+                // Jalur: Penyusutan > Arsip Permanen > Detail
+                $labelLevel1 = 'Penyusutan';
+                $urlLevel1 = route('penyusutan.index');
+                $labelLevel2 = 'Arsip Permanen';
+                $urlLevel2 = route('penyusutan.permanen.index');
+            } 
+            else {
+                // Jalur Normal: Nama Bidang > Arsip Inaktif > Detail
+                $labelLevel1 = $namaBidangYangDibuka ?? 'Unit Kerja';
+                $slugBidangSafe = str_replace('_', '-', $slugBidangYangDibuka ?? 'dashboard');
+                $urlLevel1 = route('dashboard.' . $slugBidangSafe);
+                
+                $labelLevel2 = 'Arsip Inaktif';
+                // Gunakan parameter filter agar tidak kembali ke daftar pusat Sekretariat
+                $urlLevel2 = route('arsip.inaktif.index', ['filterBidang' => $slugBidangYangDibuka]);
+            }
         @endphp
 
         <div class="welcome-title-group">
             <h1>Detail Arsip</h1>
-
-            {{-- Breadcrumb Level 1 (Penyusutan / Nama Bidang) --}}
-            <a href="{{ $urlLevel1 }}" class="breadcrumb-item">{{ $labelLevel1 }}</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-
-            {{-- Breadcrumb Level 2 (Status Arsip) --}}
-            <a href="{{ $urlLevel2 }}" class="breadcrumb-item">{{ $labelLevel2 }}</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-
-            {{-- Breadcrumb Level 3 (Halaman Aktif) --}}
-            <span class="breadcrumb-item active">Detail Arsip</span>
+            <div class="breadcrumbs">
+                {{-- Level 1: Bidang atau Penyusutan --}}
+                <a href="{{ $urlLevel1 }}" class="breadcrumb-item active">{{ $labelLevel1 }}</a>
+                
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                
+                {{-- Level 2: Arsip Inaktif / Musnah / Permanen --}}
+                <a href="{{ $urlLevel2 }}" class="breadcrumb-item active">{{ $labelLevel2 }}</a>
+                
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                
+                {{-- Level 3: Detail --}}
+                <span class="breadcrumb-item active">Detail Arsip</span>
+            </div>
         </div>
-
     </x-slot>
 
     {{-- 2. CSS KHUSUS HALAMAN DETAIL (Dirapikan) --}}
@@ -163,14 +161,16 @@
             width: 100%;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 0 0 1px var(--border-color);
+            overflow: hidden;
+            margin-bottom: 1rem;
         }
 
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
+            white-space: nowrap;
         }
 
         .data-table th,
@@ -305,6 +305,12 @@
         .row {
             margin: 0;
         }
+
+        .col-uraian {
+            white-space: normal;
+            min-width: 250px;
+            line-height: 1.5;
+        }
     </style>
     @endpush
 
@@ -331,10 +337,15 @@
                 <div class="detail-body">
 
                     <h3 class="detail-header">
-                        Informasi Berkas "{{ $arsip->nomor_berkas }} - {{ $arsip->uraian }}"
+                        {{-- Informasi Berkas "{{ $arsip->nomor_berkas }} - {{ $arsip->uraian }}" --}}
+                        Informasi Berkas
+
                     </h3>
 
                     <div class="detail-grid">
+                        <div class="detail-item"><span class="detail-label">Uraian</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->uraian }}</span></div>
+                        <div class="detail-item"><span class="detail-label"></span><span class="detail-separator"></span><span class="detail-value"></span></div>
+
                         {{-- BARIS 1 --}}
                         <div class="detail-item"><span class="detail-label">Kode Klasifikasi</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->kode_klasifikasi }}</span></div>
                         <div class="detail-item"><span class="detail-label">Index</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->index ?? '-' }}</span></div>
@@ -346,10 +357,12 @@
 
                         {{-- BARIS 3 --}}
                         <div class="detail-item"><span class="detail-label">Kurun Waktu</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->kurun_waktu ?? '-' }}</span></div>
-                        <div class="detail-item"><span class="detail-label">Retensi Inaktif</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->masa_retensi_inaktif ? $arsip->masa_retensi_inaktif . ' Tahun' : '-' }}</span></div>
+                        <div class="detail-item"><span class="detail-label">Retensi Aktif</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->masa_retensi_aktif ? $arsip->masa_retensi_aktif . ' Tahun' : '-' }}</span></div>
 
+                        
                         {{-- BARIS 4 --}}
                         {{-- Retensi Aktif DIHAPUS (DIHILANGKAN DARI TAMPILAN) --}}
+                        <div class="detail-item"><span class="detail-label">Retensi Inaktif</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->masa_retensi_inaktif ? $arsip->masa_retensi_inaktif . ' Tahun' : '-' }}</span></div>
                         <div class="detail-item"><span class="detail-label">Status Akhir</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->status_akhir ?? '-' }}</span></div>
                         <div class="detail-item"><span class="detail-label">Tanggal Masuk</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->tanggal_dipindah?->isoFormat('D MMM YYYY, HH:mm') ?? '-' }}</span></div>
 
@@ -359,7 +372,7 @@
 
                         {{-- BARIS 6 --}}
                         <div class="detail-item"><span class="detail-label">Klasifikasi Akses</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->klasifikasi_akses ?? '-' }}</span></div>
-                        <div class="detail-item"><span class="detail-label">Tanggal Berkas</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->tanggal_dibuat?->isoFormat('D MMM YYYY') ?? '-' }}</span></div>
+                        <div class="detail-item"><span class="detail-label">Tanggal Berkas (Exp. Date)</span><span class="detail-separator">:</span><span class="detail-value text-danger">{{ $arsip->tgl_retensi_berakhir?->isoFormat('D MMM YYYY') ?? '-' }}</div>
 
                     </div>
 
@@ -377,42 +390,55 @@
                         <h3>Isi Berkas (Total: {{ $arsip->files->count() }})</h3>
 
                         {{-- TOMBOL TAMBAH FILE DI KANAN ATAS TABEL --}}
-                        <a href="{{ route('arsip.inaktif.file.create', $arsip->id) }}" class="btn btn-primary">
+                        {{-- <a href="{{ route('arsip.inaktif.file.create', $arsip->id) }}" class="btn btn-primary">
                             <i class="bi bi-plus-circle"></i> Tambah File
-                        </a>
+                        </a> --}}
                     </div>
 
                     <div class="table-responsive">
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 13%;">Nomor Berkas</th>
-                                    <th class="text-center" style="width: 9%;">No Item Arsip</th>
-                                    <th style="width: 12%;">Kode Klasifikasi</th>
-                                    <th>Uraian Informasi Arsip</th>
-                                    <th class="text-center" style="width: 13%;">Tanggal Berkas</th>
-                                    <th class="text-center" style="width: 8%;">Jumlah Item</th>
-                                    <th style="width: 16%;">Tingkat Perkembangan</th>
-                                    <th class="text-center" style="width: 100px;">Aksi</th>
+                                    <th class="text-center" style="width: 8%;">No Berkas</th>
+                                    <th class="text-center" style="width: 8%;">No Item</th>
+                                    <th class="text-center" style="width: 10%;">Kode Klas.</th>
+                                    <th class="text-center">Uraian Informasi Arsip</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-center" style="width: 12%;">Tgl. Berkas</th>
+                                    <th class="text-center" style="width: 10%;">Jumlah Item</th>
+                                    <th class="text-center" style="width: 12%;">Perkembangan</th>
+                                    <th class="text-center" style="width: 11%;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse ($arsip->files as $file)
                                 <tr>
-                                    <td>{{ $arsip->nomor_berkas }}</td>
+                                    <td class="text-center">{{ $arsip->nomor_berkas }}</td>
                                     <td class="text-center">{{ $loop->iteration }}</td>
-                                    <td>{{ $arsip->kode_klasifikasi }}</td>
+                                    <td class="text-center">{{ $arsip->kode_klasifikasi }}</td>
 
                                     {{-- Menggunakan fallback uraian --}}
-                                    <td>{{ $file->uraian_informasi ?? $arsip->uraian }}</td>
+                                    <td class="col-uraian">{{ $file->uraian_informasi ?? $arsip->uraian }}</td>
+
+                                    <td class="text-center">
+                                        @if($file->path_file)
+                                            <span class="badge bg-success" style="font-size: 0.75rem;"><i class="bi bi-file-earmark-check"></i> Ada File</span>
+                                        @else
+                                            <span class="badge bg-warning text-dark" style="font-size: 0.75rem;"><i class="bi bi-card-text"></i> Metadata</span>
+                                        @endif
+                                    </td>
 
                                     {{-- Tanggal File (Null Safe) --}}
                                     <td class="text-center">
                                         {{ $file->created_at?->format('d M Y') ?? '-' }}
                                     </td>
 
-                                    <td class="text-center">{{ $file->jumlah ?? ($arsip->jumlah ?? '-') }}</td>
-                                    <td>{{ $file->tingkat_perkembangan ?? ($arsip->tingkat_perkembangan ?? '-') }}</td>
+                                    <td class="text-center">
+                                        {{ $file->jumlah }} {{ $file->satuan ?? 'Lembar' }}
+                                    </td>
+
+                                    {{-- <td class="text-center">{{ $file->jumlah ?? ($arsip->jumlah ?? '-') }}</td> --}}
+                                    <td class="text-center">{{ $file->tingkat_perkembangan ?? ($arsip->tingkat_perkembangan ?? '-') }}</td>
 
                                     <td class="text-center">
                                         <div class="action-buttons">

@@ -243,7 +243,7 @@
             {{-- OPSI 1: ARSIP MUSNAH --}}
             <a href="{{ route('penyusutan.musnah.index') }}" class="option-card theme-red animated-card" style="animation-delay: 0.1s;" wire:navigate>
                 @if($pendingMusnah > 0)
-                    <div class="ready-badge">{{ $pendingMusnah }} Siap Musnah</div>
+                    <div class="ready-badge">{{ $pendingMusnah }} Musnah</div>
                 @endif
                 <div class="option-icon">
                     <i class="bi bi-trash3"></i>
@@ -259,12 +259,12 @@
                     <div class="option-stats">
                         <div class="stat-item">
                             <span class="stat-value">{{ number_format($totalMusnah) }}</span>
-                            <span class="stat-label">Total Arsip</span>
+                            <span class="stat-label">Total Arsip Musnah</span>
                         </div>
-                        <div class="stat-item" style="border-left: 1px solid var(--border-color); padding-left: 10px;">
+                        {{-- <div class="stat-item" style="border-left: 1px solid var(--border-color); padding-left: 10px;">
                             <span class="stat-value" style="color: var(--red-text);">{{ number_format($pendingMusnah) }}</span>
                             <span class="stat-label">Belum Musnah</span>
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
                 <div class="option-arrow">
@@ -275,7 +275,7 @@
             {{-- OPSI 2: ARSIP PERMANEN --}}
             <a href="{{ route('penyusutan.permanen.index') }}" class="option-card theme-blue animated-card" style="animation-delay: 0.2s;" wire:navigate>
                 @if($pendingPermanen > 0)
-                    <div class="ready-badge">{{ $pendingPermanen }} Siap Verifikasi</div>
+                    <div class="ready-badge">{{ $pendingPermanen }} Permanen</div>
                 @endif
                 <div class="option-icon">
                     <i class="bi bi-archive"></i>
@@ -291,12 +291,12 @@
                     <div class="option-stats">
                         <div class="stat-item">
                             <span class="stat-value">{{ number_format($totalPermanen) }}</span>
-                            <span class="stat-label">Total Arsip</span>
+                            <span class="stat-label">Total Arsip Permanen</span>
                         </div>
-                        <div class="stat-item" style="border-left: 1px solid var(--border-color); padding-left: 10px;">
+                        {{-- <div class="stat-item" style="border-left: 1px solid var(--border-color); padding-left: 10px;">
                             <span class="stat-value" style="color: var(--blue-text);">{{ number_format($pendingPermanen) }}</span>
                             <span class="stat-label">Siap Permanen</span>
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
                 <div class="option-arrow">

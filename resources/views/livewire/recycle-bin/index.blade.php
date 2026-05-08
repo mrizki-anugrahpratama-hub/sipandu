@@ -145,7 +145,7 @@
     </style>
     
     @section('breadcrumbs')
-    <span class="breadcrumb-item active">Recycle Bin</span>
+    <span class="breadcrumb-item active">Keranjang Sampah</span>
     @endsection
 
     <div class="content-wrapper">
@@ -247,9 +247,9 @@
 
                 {{-- Actions --}}
                 <div style="display: flex; gap: 0.5rem;">
-                    <div wire:loading class="badge-soft" style="background-color: var(--bg-subtle); color: var(--text-sub); display: flex; align-items: center;">
+                    {{-- <div wire:loading class="badge-soft" style="background-color: var(--bg-subtle); color: var(--text-sub); display: flex; align-items: center;">
                         Loading...
-                    </div>
+                    </div> --}}
 
                     @if(count($selectedItems) > 0)
                         <button wire:click="restoreSelected" class="btn btn-primary" style="border-radius: 0.75rem;">

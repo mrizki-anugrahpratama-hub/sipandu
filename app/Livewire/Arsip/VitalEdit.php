@@ -32,49 +32,44 @@ class VitalEdit extends Component
     public $metode_perlindungan;
     public $keterangan_tambahan;
     public $kondisi_arsip; // [TAMBAHAN] Properti untuk kolom BARU
+    public $arsip;
 
     // [DIUBAH] mount() sekarang juga mengatur header
     public function mount($id)
     {
-        $arsip = ArsipVital::findOrFail($id);
-        $user = Auth::user();
-        $currentBidang = Session::get('current_bidang');
-        
-        // VALIDASI PERMISSION
-        if ($user->role !== 'super_admin') {
-            if ($arsip->bidang !== $user->role) {
-                abort(403, 'Anda tidak memiliki akses untuk mengedit arsip ini.');
-            }
-        } else {
-            if ($currentBidang && $arsip->bidang !== $currentBidang) {
-                abort(403, 'Anda tidak memiliki akses untuk mengedit arsip ini.');
-            }
+        $this->arsip = ArsipVital::findOrFail($id);
+        $user = auth()->user();
+
+        // Logika Otoritas (Sudah Benar)
+        $lingkupSekretariat = ['umum_kepegawaian', 'keuangan', 'penyusunan_program', 'sekretariat'];
+        $isSuperAdmin = ($user->role === 'super_admin');
+        $isPemilikArsip = ($user->role === $this->arsip->bidang);
+        $isSekretariatManager = ($user->role === 'sekretariat' && in_array($this->arsip->bidang, $lingkupSekretariat));
+
+        if (!$isSuperAdmin && !$isPemilikArsip && !$isSekretariatManager) {
+            abort(403, 'ANDA TIDAK MEMILIKI AKSES UNTUK MENGEDIT ARSIP INI.');
         }
 
         // Load data form
-        $this->arsipId = $arsip->id;
-        $this->asal_arsip = $arsip->asal_arsip;
-        $this->nomor_berkas = $arsip->nomor_berkas;
-        $this->kode_klasifikasi = $arsip->kode_klasifikasi;
-        $this->jenis_series_arsip = $arsip->jenis_series_arsip;
-        $this->isi_berkas = $arsip->isi_berkas;
-        $this->bulan_tahun = $arsip->bulan_tahun;
-        $this->jumlah_satuan = $arsip->jumlah_satuan;
-        $this->klasifikasi_keamanan = $arsip->klasifikasi_keamanan;
-        $this->keterangan = $arsip->keterangan;
-        $this->retensi_arsip_vital = $arsip->retensi_arsip_vital;
-        $this->lokasi_simpan = $arsip->lokasi_simpan;
-        $this->metode_perlindungan = $arsip->metode_perlindungan;
-        $this->keterangan_tambahan = $arsip->keterangan_tambahan;
-        $this->kondisi_arsip = $arsip->kondisi_arsip; // [TAMBAHAN] Muat data kondisi arsip
+        $this->arsipId = $this->arsip->id;
+        $this->asal_arsip = $this->arsip->asal_arsip;
+        $this->nomor_berkas = $this->arsip->nomor_berkas;
+        $this->kode_klasifikasi = $this->arsip->kode_klasifikasi;
+        $this->jenis_series_arsip = $this->arsip->jenis_series_arsip;
+        $this->isi_berkas = $this->arsip->isi_berkas;
+        $this->bulan_tahun = $this->arsip->bulan_tahun;
+        $this->jumlah_satuan = $this->arsip->jumlah_satuan;
+        $this->klasifikasi_keamanan = $this->arsip->klasifikasi_keamanan;
+        $this->keterangan = $this->arsip->keterangan;
+        $this->retensi_arsip_vital = $this->arsip->retensi_arsip_vital;
+        $this->lokasi_simpan = $this->arsip->lokasi_simpan;
+        $this->metode_perlindungan = $this->arsip->metode_perlindungan;
+        $this->keterangan_tambahan = $this->arsip->keterangan_tambahan;
+        $this->kondisi_arsip = $this->arsip->kondisi_arsip; // [TAMBAHAN] Muat data kondisi arsip
 
         // [BARU] Logika untuk Header/Breadcrumb
-        $effectiveSlug = $user->role; 
-        if ($user->role === 'super_admin') {
-            if ($currentBidang) {
-                $effectiveSlug = $currentBidang;
-            }
-        }
+        $effectiveSlug = $this->arsip->bidang;
+
         $roleMap = [
             'pemerintahan' => 'BIDANG PEMERINTAHAN',
             'pembangunan_ekonomi' => 'BIDANG PEMBANGUNAN EKONOMI',
@@ -86,14 +81,9 @@ class VitalEdit extends Component
             'sekretariat' => 'SEKRETARIAT',
             'super_admin' => 'ADMINISTRATOR UTAMA',
         ];
-        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT TIDAK DIKENAL';
+        $namaDariMap = $roleMap[$effectiveSlug] ?? 'UNIT KERJA';
         $this->namaBidangYangDibuka = Str::title(strtolower($namaDariMap));
-        
-        if ($effectiveSlug === 'super_admin') {
-            $this->slugBidangYangDibuka = null;
-        } else {
-            $this->slugBidangYangDibuka = $effectiveSlug;
-        }
+        $this->slugBidangYangDibuka = $effectiveSlug;
     }
 
     protected $rules = [
@@ -137,7 +127,7 @@ class VitalEdit extends Component
         ]);
 
         session()->flash('success', 'Arsip Vital berhasil diperbarui!');
-        return redirect()->route('arsip.vital.index');
+        return redirect()->route('arsip.vital.index', ['filterBidang' => $this->slugBidangYangDibuka]);
     }
 
     // [DIUBAH] render() sekarang mengirim data header

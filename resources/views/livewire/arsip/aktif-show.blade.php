@@ -3,16 +3,23 @@
     <x-slot name="header">
         @php
             $urlBidang = $slugBidangYangDibuka ? route('dashboard.' . str_replace('_', '-', $slugBidangYangDibuka)) : '#';
-            $urlArsipAktif = route('arsip.aktif.index');
+            
+            // PERBAIKAN: Tambahkan parameter filterBidang agar tetap terkunci di sub-bidang (misal: umpeg)
+            $urlArsipAktif = route('arsip.aktif.index', ['filterBidang' => $slugBidangYangDibuka]);
         @endphp
-
+    
         <div class="welcome-title-group">
             <h1>Detail Arsip</h1>
-            <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <a href="{{ $urlArsipAktif }}" class="breadcrumb-item active">Arsip Aktif</a>
-            <i class="bi bi-chevron-right breadcrumb-separator"></i>
-            <span class="breadcrumb-item active">Detail Arsip</span>
+            <div class="breadcrumbs">
+                <a href="{{ $urlBidang }}" class="breadcrumb-item active">{{ $namaBidangYangDibuka }}</a>
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                
+                {{-- Sekarang link ini membawa filter --}}
+                <a href="{{ $urlArsipAktif }}" class="breadcrumb-item active">Arsip Aktif</a>
+                
+                <i class="bi bi-chevron-right breadcrumb-separator"></i>
+                <span class="breadcrumb-item active">Detail Arsip</span>
+            </div>
         </div>
     </x-slot>
 
@@ -163,10 +170,15 @@
                     <div class="detail-body">
                         
                         <h3 class="detail-header">
-                            Informasi Berkas "{{ $arsip->nomor_berkas }} - {{ $arsip->uraian }}"
+                            {{-- Informasi Berkas "{{ $arsip->nomor_berkas }} - {{ $arsip->uraian }}" --}}
+                            Informasi Berkas
                         </h3>
                         
                         <div class="detail-grid">
+
+                            <div class="detail-item"><span class="detail-label">Uraian</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->uraian }}</span></div>
+                            <div class="detail-item"><span class="detail-label"></span><span class="detail-separator"></span><span class="detail-value"></span></div>
+                            
                             {{-- BARIS 1 --}}
                             <div class="detail-item"><span class="detail-label">Kode Klasifikasi</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->kode_klasifikasi }}</span></div>
                             <div class="detail-item"><span class="detail-label">Index</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->index ?? '-' }}</span></div>
@@ -182,6 +194,8 @@
                             {{-- BARIS 4 --}}
                             <div class="detail-item"><span class="detail-label">Retensi Inaktif</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->masa_retensi_inaktif ? $arsip->masa_retensi_inaktif . ' Tahun' : '-' }}</span></div>
                             <div class="detail-item"><span class="detail-label">Status Akhir</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->status_akhir ?? '-' }}</span></div>
+                            <div class="detail-item"><span class="detail-label">Tanggal Arsip Dibuat</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->tanggal_dibuat?->isoFormat('D MMM YYYY, HH:mm') ?? '-' }}</span></div>
+
 
                             {{-- BARIS 5 --}}
                             <div class="detail-item"><span class="detail-label">Tingkat Perkembangan</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->tingkat_perkembangan ?? '-' }}</span></div>
@@ -189,7 +203,8 @@
 
                             {{-- BARIS 6 --}}
                             <div class="detail-item"><span class="detail-label">Klasifikasi Akses</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->klasifikasi_akses ?? '-' }}</span></div>
-                            <div class="detail-item"><span class="detail-label">Tanggal Berkas</span><span class="detail-separator">:</span><span class="detail-value">{{ $arsip->tanggal_dibuat?->isoFormat('D MMM YYYY') ?? '-' }}</span></div>
+                            <div class="detail-item"><span class="detail-label">Tanggal Berkas (Exp. Date)</span><span class="detail-separator">:</span><span class="detail-value text-danger">{{ $arsip->tanggal_dibuat?->addYears($arsip->masa_retensi_aktif)->isoFormat('D MMM YYYY') ?? '-' }}
+                            </span></span></div>
                         </div>
                         
                         @if($arsip->keterangan)
@@ -213,40 +228,56 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 15%;">Nomor Berkas</th>
+                                        <th class="text-center" style="width: 10%;">No Berkas</th>
                                         <th class="text-center" style="width: 8%;">No Item</th>
-                                        <th style="width: 12%;">Kode Klas.</th>
-                                        <th>Uraian Informasi Arsip</th>
-                                        <th class="text-center" style="width: 12%;">Tanggal</th>
-                                        <th class="text-center" style="width: 8%;">Jumlah</th>
-                                        <th style="width: 15%;">Perkembangan</th>
-                                        <th class="text-center" style="width: 100px;">Aksi</th>
+                                        <th class="text-center" style="width: 10%;">Kode Klas.</th>
+                                        <th class="text-center">Uraian Informasi Arsip</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center" style="width: 12%;">Tgl. Berkas</th>
+                                        <th class="text-center" style="width: 10%;">Kuantitas</th>
+                                        <th class="text-center" style="width: 12%;">Perkembangan</th>
+                                        <th class="text-center" style="width: 11%;">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse ($arsip->files as $file)
                                         <tr>
                                             {{-- NOMOR BERKAS: Hapus style bold --}}
-                                            <td>{{ $arsip->nomor_berkas }}</td>
+                                            <td class="text-center">{{ $arsip->nomor_berkas }}</td>
                                             
                                             <td class="text-center">{{ $loop->iteration }}</td> 
                                             
                                             {{-- KODE KLASIFIKASI: Hapus span badge, jadi teks biasa --}}
-                                            <td>{{ $arsip->kode_klasifikasi }}</td>
+                                            <td class="text-center">{{ $arsip->kode_klasifikasi }}</td>
                                             
                                             <td class="col-uraian">{{ $file->uraian ?? $arsip->uraian }}</td> 
+                                            
+                                            <td class="text-center">
+                                                @if($file->path_file)
+                                                    <span class="badge bg-success" style="font-size: 0.75rem;"><i class="bi bi-file-earmark-check"></i> Ada File</span>
+                                                @else
+                                                    <span class="badge bg-warning text-dark" style="font-size: 0.75rem;"><i class="bi bi-card-text"></i> Metadata</span>
+                                                @endif
+                                            </td>
                                             <td class="text-center">{{ $file->tanggal_file?->format('d/m/Y') ?? '-' }}</td>
-                                            <td class="text-center">{{ $file->jumlah ?? '-' }}</td>
-                                            <td>{{ $file->tingkat_perkembangan ?? '-' }}</td>
+                                            <td class="text-center">
+                                                {{ $file->jumlah }} {{ $file->satuan ?? 'Lembar' }}
+                                            </td>
+                                            <td class="text-center">{{ $file->tingkat_perkembangan ?? '-' }}</td>
                                             <td class="text-center">
                                                 <div class="action-buttons">
-                                                    <a href="{{ Storage::url($file->path_file) }}" target="_blank" class="btn-icon" title="Lihat File">
-                                                        <i class="bi bi-eye"></i>
+                                                    @if($file->path_file)
+                                                        <a href="{{ Storage::url($file->path_file) }}" target="_blank" class="btn-icon" title="Lihat File">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                    @endif
+                                                    
+                                                    {{-- TOMBOL EDIT BARU --}}
+                                                    <a href="{{ route('arsip.aktif.file.edit', $file->id) }}" class="btn-icon" title="Edit Data/File">
+                                                        <i class="bi bi-pencil-square"></i>
                                                     </a>
-                                                    <button wire:click.prevent="confirmFileDelete({{ $file->id }})" 
-                                                            onclick="event.stopPropagation()" 
-                                                            class="btn-icon btn-icon-danger" 
-                                                            title="Hapus File">
+
+                                                    <button wire:click.prevent="confirmFileDelete({{ $file->id }})" class="btn-icon btn-icon-danger" title="Hapus">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
                                                 </div>
@@ -254,7 +285,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="8" style="padding: 40px; text-align: center;">
+                                            <td colspan="9" style="padding: 40px; text-align: center;">
                                                 <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--text-muted);">
                                                     <i class="bi bi-folder-x" style="font-size: 2rem; opacity: 0.5;"></i>
                                                     <span>Belum ada file arsip yang di-upload.</span>
