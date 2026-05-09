@@ -145,7 +145,7 @@
     </style>
     
     @section('breadcrumbs')
-    <span class="breadcrumb-item active">Keranjang Sampah</span>
+    <span class="breadcrumb-item active">Recycle Bin</span>
     @endsection
 
     <div class="content-wrapper">
